@@ -31,8 +31,10 @@ export function printCDPInstructions(): void {
     console.log(chalk.white('Run the following command in Terminal (macOS):'));
     console.log(chalk.green(`/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=${port} --user-data-dir="/Users/ssbushi/ChromeDevSession"`));
   } else if (platform === 'win32') {
-    console.log(chalk.white('Run the following command in Command Prompt (Windows):'));
-    console.log(chalk.green(`chrome.exe --remote-debugging-port=${port} --user-data-dir="C:\\ChromeDevSession"`));
+    console.log(chalk.white('Run the following command in Command Prompt (CMD):'));
+    console.log(chalk.green(`"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" --remote-debugging-port=${port} --user-data-dir="C:\\ChromeDevSession"`));
+    console.log(chalk.white('\nOr run in PowerShell:'));
+    console.log(chalk.green(`& "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" --remote-debugging-port=${port} --user-data-dir="C:\\ChromeDevSession"`));
   } else {
     console.log(chalk.white('Run the following command in Terminal (Linux):'));
     console.log(chalk.green(`google-chrome --remote-debugging-port=${port} --user-data-dir="/tmp/ChromeDevSession"`));

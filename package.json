@@ -1,0 +1,26 @@
+{
+  "name": "trader-app",
+  "version": "1.0.0",
+  "description": "Automated options trading strategy synthesis app using Playwright and Genkit",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "ts-node index.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "playwright": "^1.45.0",
+    "genkit": "^1.29.0",
+    "@genkit-ai/google-genai": "^1.29.0",
+    "dotenv": "^16.4.5",
+    "csv-parser": "^3.0.0",
+    "chalk": "^4.1.2",
+    "boxen": "^5.1.2",
+    "ora": "^5.4.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.2",
+    "@types/node": "^20.14.9",
+    "ts-node": "^10.9.2"
+  }
+}

@@ -1,5 +1,5 @@
 import * as dotenv from 'dotenv';
-import * as chalk from 'chalk';
+import chalk from 'chalk';
 import boxen from 'boxen';
 import ora from 'ora';
 import { connectToChrome } from './browser/connection';

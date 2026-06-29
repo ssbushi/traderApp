@@ -1,7 +1,7 @@
 import { Page } from 'playwright';
 import csv from 'csv-parser';
 import * as fs from 'fs';
-import * as chalk from 'chalk';
+import chalk from 'chalk';
 
 export interface ZerodhaData {
   datetime: string;

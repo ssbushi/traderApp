@@ -1,5 +1,5 @@
 import { Page } from 'playwright';
-import * as chalk from 'chalk';
+import chalk from 'chalk';
 
 export interface SensibullData {
   price?: number;

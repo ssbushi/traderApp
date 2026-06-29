@@ -2,7 +2,7 @@ import { openAI } from '@genkit-ai/compat-oai/openai';
 import { ai, StrategySchema, StrategyResponse } from './genkit';
 import { ZerodhaData } from '../browser/zerodha';
 import { SensibullData } from '../browser/sensibull';
-import * as chalk from 'chalk';
+import chalk from 'chalk';
 
 export async function generateStrategy(
   zerodha: ZerodhaData,

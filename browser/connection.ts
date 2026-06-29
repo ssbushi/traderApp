@@ -1,7 +1,7 @@
 import { chromium, BrowserContext, Page } from 'playwright';
 import * as http from 'http';
 import * as dotenv from 'dotenv';
-import * as chalk from 'chalk';
+import chalk from 'chalk';
 
 dotenv.config();
 

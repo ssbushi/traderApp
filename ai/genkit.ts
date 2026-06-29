@@ -1,12 +1,12 @@
 import { genkit, z } from 'genkit';
-import { googleAI } from '@genkit-ai/google-genai';
+import { openAI } from '@genkit-ai/compat-oai/openai';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-// Ensure the Genkit client is configured with Google AI plugin
+// Ensure the Genkit client is configured with OpenAI plugin
 export const ai = genkit({
-  plugins: [googleAI()],
+  plugins: [openAI()],
 });
 
 // Zod schema for structured output to ensure clean JSON responses

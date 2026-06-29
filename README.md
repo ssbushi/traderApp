@@ -1,6 +1,6 @@
 # NIFTY Options Analysis AI Co-Pilot
 
-An automated command-line assistant designed to help NIFTY options traders make informed decisions. It connects to your active **Zerodha Kite** and **Sensibull** browser tabs, extracts live technical chart indicators and options metrics, and passes them to **Google Gemini (via Genkit)** to synthesize a structured trading strategy.
+An automated command-line assistant designed to help NIFTY options traders make informed decisions. It connects to your active **Zerodha Kite** and **Sensibull** browser tabs, extracts live technical chart indicators and options metrics, and passes them to **OpenAI GPT-4o-Mini (via Genkit)** to synthesize a structured trading strategy.
 
 ---
 
@@ -38,10 +38,10 @@ An automated command-line assistant designed to help NIFTY options traders make 
 3. **Configure Environment Variables:**
    Create a `.env` file in the root directory:
    ```env
-   GEMINI_API_KEY=your_gemini_api_key_here
-   CDP_HOST=127.0.0.1
-   CDP_PORT=9222
-   INTERVAL_MINUTES=5
+    OPENAI_API_KEY=your_openai_api_key_here
+    CDP_HOST=127.0.0.1
+    CDP_PORT=9222
+    INTERVAL_MINUTES=5
    ```
 
 ---
@@ -85,7 +85,7 @@ npm start
 
 | Variable | Default | Description |
 | :--- | :--- | :--- |
-| `GEMINI_API_KEY` | *Required* | API key for Gemini access. |
+| `OPENAI_API_KEY` | *Required* | API key for OpenAI access. |
 | `CDP_HOST` | `127.0.0.1` | The host running Chrome DevTools Protocol. |
 | `CDP_PORT` | `9222` | The debugging port Chrome is listening on. |
 | `INTERVAL_MINUTES` | `5` | Time interval (in minutes) between analysis updates. |

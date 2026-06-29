@@ -1,4 +1,4 @@
-import { googleAI } from '@genkit-ai/google-genai';
+import { openAI } from '@genkit-ai/compat-oai/openai';
 import { ai, StrategySchema, StrategyResponse } from './genkit';
 import { ZerodhaData } from '../browser/zerodha';
 import { SensibullData } from '../browser/sensibull';
@@ -8,7 +8,7 @@ export async function generateStrategy(
   zerodha: ZerodhaData,
   sensibull: SensibullData
 ): Promise<StrategyResponse> {
-  console.log(chalk.blue('Sending aggregated metrics and option chain data to Gemini...'));
+  console.log(chalk.blue('Sending aggregated metrics and option chain data to OpenAI...'));
 
   const promptText = `
 You are an expert options trading quantitative strategist specialized in NIFTY options trading.
@@ -65,7 +65,7 @@ Generate a highly specific strategy containing market sentiment, a CPR analysis 
 `;
 
   const response = await ai.generate({
-    model: googleAI.model('gemini-2.5-flash'),
+    model: openAI.model('gpt-4o-mini'),
     prompt: promptText,
     output: {
       schema: StrategySchema,
@@ -73,7 +73,7 @@ Generate a highly specific strategy containing market sentiment, a CPR analysis 
   });
 
   if (!response.output) {
-    throw new Error('Gemini failed to generate a structured strategy output.');
+    throw new Error('OpenAI failed to generate a structured strategy output.');
   }
 
   return response.output;

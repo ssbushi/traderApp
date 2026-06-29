@@ -41,42 +41,81 @@ export async function fetchZerodhaData(page: Page): Promise<ZerodhaData> {
     console.log(chalk.yellow('Chart iframe not found. Searching on the main page.'));
   }
 
-  // Selector checks
+  // Selector checks for the Download/Export button
   const customSelector = process.env.ZERODHA_DOWNLOAD_SELECTOR;
-  const selectors = customSelector 
+  const downloadSelectors = customSelector 
     ? [customSelector] 
     : [
-        'button:has-text("Export")',
         'button:has-text("Download")',
-        '[title*="Export"]',
-        '[title*="Download"]',
-        '[aria-label*="Export"]',
-        '[aria-label*="Download"]',
-        '.export-button',
-        '.download-button'
+        'button:has-text("Export")',
+        '[title*="Download" i]',
+        '[title*="Export" i]',
+        '[aria-label*="Download" i]',
+        '[aria-label*="Export" i]',
+        '.download-button',
+        '.export-button'
       ];
 
   let downloadSelector: string | null = null;
-  for (const sel of selectors) {
-    try {
-      const isVisible = await searchContext.locator(sel).first().isVisible();
-      if (isVisible) {
-        downloadSelector = sel;
-        break;
-      }
-    } catch {}
+
+  // Helper to check if any download button is visible
+  const findVisibleDownloadButton = async (): Promise<string | null> => {
+    for (const sel of downloadSelectors) {
+      try {
+        const isVisible = await searchContext.locator(sel).first().isVisible();
+        if (isVisible) return sel;
+      } catch {}
+    }
+    return null;
+  };
+
+  // Try finding it directly
+  downloadSelector = await findVisibleDownloadButton();
+
+  // If not visible, try to toggle Table View (required for ChartIQ)
+  if (!downloadSelector) {
+    console.log(chalk.blue('Download button not immediately visible. Attempting to toggle Table View...'));
+    const tableSelectors = [
+      'cq-toggle.tableview-ui',
+      'cq-toggle[cq-member="tableView"]',
+      'cq-toggle:has-text("Table View")',
+      '[title*="table" i]',
+      '[aria-label*="table" i]',
+      'button:has-text("Table")',
+      '[class*="table" i]',
+      '.ciq-table'
+    ];
+
+    let tableToggled = false;
+    for (const sel of tableSelectors) {
+      try {
+        const btn = searchContext.locator(sel).first();
+        if (await btn.isVisible()) {
+          console.log(chalk.blue(`Found Table View toggle button: "${sel}". Clicking...`));
+          await btn.click();
+          tableToggled = true;
+          break;
+        }
+      } catch {}
+    }
+
+    if (tableToggled) {
+      console.log(chalk.blue('Table View toggled. Waiting for the Download button to render...'));
+      await page.waitForTimeout(1000); // Allow table rendering time
+      downloadSelector = await findVisibleDownloadButton();
+    }
   }
 
   if (!downloadSelector) {
     console.log(chalk.red('\n[Error] Could not find the export or download button on the Zerodha chart.'));
     console.log(chalk.yellow('Please make sure:'));
     console.log(chalk.white(' 1. The chart is open and visible on the Zerodha tab.'));
-    console.log(chalk.white(' 2. You are using TradingView charts with the Export button enabled.'));
+    console.log(chalk.white(' 2. You have enabled the "Table View" toggle on the chart toolbar (see the grid icon).'));
     console.log(chalk.white(` 3. Or specify ZERODHA_DOWNLOAD_SELECTOR in your .env file.\n`));
-    throw new Error('Export button not found on Zerodha page.');
+    throw new Error('Export/Download button not found on Zerodha page.');
   }
 
-  console.log(chalk.blue(`Found export button matching selector: "${downloadSelector}". Clicking...`));
+  console.log(chalk.blue(`Found download button matching selector: "${downloadSelector}". Clicking...`));
 
   // Trigger download
   const downloadPromise = page.waitForEvent('download', { timeout: 15000 });

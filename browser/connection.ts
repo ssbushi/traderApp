@@ -2,6 +2,8 @@ import { chromium, BrowserContext, Page } from 'playwright';
 import * as http from 'http';
 import * as dotenv from 'dotenv';
 import chalk from 'chalk';
+import * as os from 'os';
+import * as fs from 'fs';
 
 dotenv.config();
 
@@ -21,10 +23,31 @@ export async function checkChromeCDP(): Promise<boolean> {
   });
 }
 
+function isWSL(): boolean {
+  if (process.platform !== 'linux') return false;
+  if (os.release().toLowerCase().includes('microsoft')) return true;
+  try {
+    return fs.readFileSync('/proc/version', 'utf8').toLowerCase().includes('microsoft');
+  } catch {
+    return false;
+  }
+}
+
 export function printCDPInstructions(): void {
   const platform = process.platform;
   console.log(chalk.red.bold('\n[Error] Could not connect to Google Chrome via Remote Debugging.'));
   console.log(chalk.yellow(`Please make sure Chrome is started with --remote-debugging-port=${port}.\n`));
+
+  if (isWSL()) {
+    console.log(chalk.yellow.bold('[WSL Detected] You are running this Node script inside WSL (Linux), but Chrome is running on Windows.'));
+    console.log(chalk.white('By default, 127.0.0.1 inside WSL cannot reach the Windows host loopback.\n'));
+    console.log(chalk.cyan('Recommendations:'));
+    console.log(chalk.white(' 1. (Recommended) Run this Node script inside a Windows CMD or PowerShell window instead.'));
+    console.log(chalk.white(' 2. Or, run: ip route | grep default | awk \'{print $3}\' in WSL to find your Windows host IP,'));
+    console.log(chalk.white(`    and set CDP_HOST=<host_ip> in your .env file.\n`));
+    return;
+  }
+
   console.log(chalk.cyan('How to start Google Chrome with debugging enabled:'));
 
   if (platform === 'darwin') {

@@ -61,7 +61,15 @@ ${JSON.stringify(sensibull.rawJson, null, 2).substring(0, 8000)} ... [Truncated 
 5. **Max Pain alignment:**
    - At expiry or close to expiry, the index price tends to drift towards the Max Pain level. Keep this in mind when selecting strike prices.
 
-Generate a highly specific strategy containing market sentiment, a CPR analysis summary, an options analysis summary, a named strategy, a list of legs, a specific target, and stop loss conditions.
+Generate a highly specific strategy matching the required output schema. You MUST populate all properties, including:
+1. marketSentiment: General trend outlook (BULLISH, BEARISH, NEUTRAL, or HIGH_VOLATILITY_NO_TRADE).
+2. cprAnalysis: Short commentary analyzing the CPR Pivot, BC, and TC relative to the close price.
+3. optionsAnalysis: Short commentary analyzing PCR, OI changes, and VIX levels.
+4. strategyName: Recommended options strategy name.
+5. legs: List of options legs to execute.
+6. stopLoss: Stop loss conditions/levels.
+7. target: Target exit levels.
+8. rationale: An array containing at least 3 detailed, point-by-point, data-backed logical arguments supporting this strategy.
 `;
 
   const response = await ai.generate({

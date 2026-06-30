@@ -77,6 +77,15 @@ export async function fetchSensibullData(page: Page): Promise<SensibullData> {
     console.log(chalk.yellow('Warning: Error parsing standard fields from Sensibull JSON. Fallback to raw JSON will be used.'));
   }
 
+  console.log(chalk.blue('\n--- Extracted Sensibull Metrics ---'));
+  console.log(`  Price: ${price ?? 'N/A'}`);
+  console.log(`  PCR: ${pcr ?? 'N/A'}`);
+  console.log(`  Max Pain: ${maxPain ?? 'N/A'}`);
+  console.log(`  India VIX: ${indiaVix ?? 'N/A'}`);
+  console.log(`  IV Percentile: ${ivPercentile ?? 'N/A'}`);
+  console.log(`  Expiry Used: ${expiryUsed ?? 'N/A'}`);
+  console.log('-----------------------------------\n');
+
   return {
     price,
     pcr,

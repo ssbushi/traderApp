@@ -227,7 +227,7 @@ export async function fetchZerodhaData(page: Page): Promise<ZerodhaData> {
       }).catch(() => []);
 
       console.log(chalk.cyan(`\nFound ${elements.length} potentially interactive elements in frame:`));
-      elements.slice(0, 30).forEach((el, idx) => {
+      elements.slice(0, 30).forEach((el: any, idx: number) => {
         console.log(`  [${idx}] <${el.tag} id="${el.id}" class="${el.class}" title="${el.title}" cq-member="${el.cqMember}"> Text: "${el.text}"`);
       });
       if (elements.length > 30) {

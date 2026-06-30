@@ -9,6 +9,12 @@ export interface SensibullData {
   indiaVix?: number;
   ivPercentile?: number;
   expiryUsed?: string;
+  callOi?: number;
+  putOi?: number;
+  callOiChange?: number;
+  putOiChange?: number;
+  futureOi?: number;
+  futureOiChange?: number;
   rawJson: any; // Resilient fallback for Gemini to parse
 }
 
@@ -61,35 +67,69 @@ export async function fetchSensibullData(page: Page): Promise<SensibullData> {
   let indiaVix: number | undefined;
   let ivPercentile: number | undefined;
   let expiryUsed: string | undefined;
+  let callOi: number | undefined;
+  let putOi: number | undefined;
+  let callOiChange: number | undefined;
+  let putOiChange: number | undefined;
+  let futureOi: number | undefined;
+  let futureOiChange: number | undefined;
 
   try {
-    // Attempting common path lookups
-    const data = rawJson.data || rawJson;
-    
-    // Spot / underlying price
-    price = data.underlying_price || data.underlyingPrice || data.spot_price || data.spotPrice || data.last_price;
-    if (typeof price === 'string') price = parseFloat(price);
+    const payload = rawJson.payload || rawJson;
+    const chartData = payload.chart_data;
 
-    // PCR
-    pcr = data.pcr || data.put_call_ratio || data.putCallRatio;
-    if (typeof pcr === 'string') pcr = parseFloat(pcr);
+    if (chartData) {
+      // Find the latest timestamp key (keys are sorted by ISO datetime strings)
+      const timestamps = Object.keys(chartData).sort();
+      const latestTimestamp = timestamps[timestamps.length - 1];
+      console.log(chalk.blue(`Latest intraday data timestamp: ${latestTimestamp}`));
 
-    // Max Pain
-    maxPain = data.max_pain || data.maxPain;
-    if (typeof maxPain === 'string') maxPain = parseFloat(maxPain);
+      const latestData = chartData[latestTimestamp];
+      if (latestData) {
+        price = latestData.spot || latestData.nifty;
+        
+        if (latestData.pcr_data) {
+          pcr = latestData.pcr_data.pcr;
+        }
+        
+        if (latestData.max_pain_data) {
+          maxPain = latestData.max_pain_data.max_pain;
+        }
+        
+        if (latestData.indiavix) {
+          indiaVix = latestData.indiavix.indiavix_price;
+        }
+        
+        if (latestData.ivp) {
+          ivPercentile = latestData.ivp.ivp;
+          expiryUsed = latestData.ivp.expiry;
+        }
+        
+        if (latestData.iv && !expiryUsed) {
+          expiryUsed = latestData.iv.atm_iv_expiry;
+        }
 
-    // India Vix
-    indiaVix = data.vix || data.india_vix || data.indiaVix || data.vix_price;
-    if (typeof indiaVix === 'string') indiaVix = parseFloat(indiaVix);
+        if (latestData.oi_options) {
+          callOi = latestData.oi_options.call_oi;
+          putOi = latestData.oi_options.put_oi;
+        }
 
-    // IV Percentile
-    ivPercentile = data.ivp || data.iv_percentile || data.ivPercentile;
-    if (typeof ivPercentile === 'string') ivPercentile = parseFloat(ivPercentile);
+        if (latestData.oi_change_options) {
+          callOiChange = latestData.oi_change_options.call_oi_change;
+          putOiChange = latestData.oi_change_options.put_oi_change;
+        }
 
-    // Expiry
-    expiryUsed = data.expiry || data.expiry_used || data.expiryUsed || data.nearest_expiry;
-  } catch (err) {
-    console.log(chalk.yellow('Warning: Error parsing standard fields from Sensibull JSON. Fallback to raw JSON will be used.'));
+        if (latestData.oi_futures) {
+          futureOi = latestData.oi_futures.futures_oi;
+        }
+
+        if (latestData.oi_change_futures) {
+          futureOiChange = latestData.oi_change_futures.future_oi_change;
+        }
+      }
+    }
+  } catch (err: any) {
+    console.log(chalk.yellow(`Warning: Error parsing standard fields from Sensibull JSON: ${err.message}`));
   }
 
   console.log(chalk.blue('\n--- Extracted Sensibull Metrics ---'));
@@ -99,6 +139,9 @@ export async function fetchSensibullData(page: Page): Promise<SensibullData> {
   console.log(`  India VIX: ${indiaVix ?? 'N/A'}`);
   console.log(`  IV Percentile: ${ivPercentile ?? 'N/A'}`);
   console.log(`  Expiry Used: ${expiryUsed ?? 'N/A'}`);
+  console.log(`  Call OI: ${callOi ?? 'N/A'} (Change: ${callOiChange ?? 'N/A'})`);
+  console.log(`  Put OI: ${putOi ?? 'N/A'} (Change: ${putOiChange ?? 'N/A'})`);
+  console.log(`  Future OI: ${futureOi ?? 'N/A'} (Change: ${futureOiChange ?? 'N/A'})`);
   console.log('-----------------------------------\n');
 
   return {
@@ -108,6 +151,12 @@ export async function fetchSensibullData(page: Page): Promise<SensibullData> {
     indiaVix,
     ivPercentile,
     expiryUsed,
+    callOi,
+    putOi,
+    callOiChange,
+    putOiChange,
+    futureOi,
+    futureOiChange,
     rawJson
   };
 }

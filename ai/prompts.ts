@@ -75,7 +75,9 @@ Compute specific strike prices, boundaries, target numbers, and stop-loss levels
 8. **maxCeiling & maxFloor:** Identify the highest open interest Call strike (Ceiling) and Put strike (Floor) from the options metrics.
 9. **gammaSqueeze:** Pinpoint the price level where short covering is likely to trigger a rapid rally or drop (usually above/below the heavy writing strikes).
 10. **violentReactionZone:** Specify a key level (e.g. Pivot, heavy OI zone) where the order book is dense and price is expected to react sharply.
-11. **trapWarning:** Formulate a warning indicating where retail buyers or sellers are likely to get trapped on false breakouts or pullbacks.
+11. **trapWarning:** Formulate explicit scenarios for both traps:
+    - bullTrap: Detail the level and conditions where buyers get trapped (e.g., price spikes above resistance briefly, then closes back below with fading volume).
+    - bearTrap: Detail the level and conditions where sellers get trapped (e.g., price dips below support briefly, then quickly reclaims it within 1-2 candles).
 12. **bounceProbability:** Estimate the mathematical probability of support/resistance holding (e.g., "70% at 23900") based on PCR and DI indicators.
 `;
 

@@ -42,7 +42,10 @@ export const StrategySchema = z.object({
   maxCeiling: z.number().describe('Ultimate resistance level (highest Call OI strike)'),
   maxFloor: z.number().describe('Ultimate support level (highest Put OI strike)'),
   violentReactionZone: z.string().describe('Level/zone where price is expected to react violently (e.g. "23900 or 23980")'),
-  trapWarning: z.string().describe('Short warning description of where retail traders will get trapped today (e.g. "Chasing longs in the middle of range")'),
+  trapWarning: z.object({
+    bullTrap: z.string().describe('Bull trap scenario (e.g., "Price trades above 24000 briefly, then closes back below with fading volume - traps breakout buyers")'),
+    bearTrap: z.string().describe('Bear trap scenario (e.g., "Price dips below 23940, then quickly reclaims within 1-2 candles - traps fresh shorts")'),
+  }).describe('Structured trap warnings for retail traders'),
   bounceProbability: z.string().describe('Estimated probability of a bounce and key level (e.g. "70% at 23900")'),
 });
 

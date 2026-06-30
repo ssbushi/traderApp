@@ -52,7 +52,8 @@ function printStrategyCard(strategy: StrategyResponse) {
     `• ${chalk.red.bold('Gamma Squeeze Level:')} ${strategy.gammaSqueeze}`,
     `• ${chalk.yellow.bold('Violent Reaction Zone:')} ${strategy.violentReactionZone}`,
     `• ${chalk.green.bold('Bounce Probability:')} ${strategy.bounceProbability}`,
-    `• ${chalk.red.bold('⚠️ TRAP WARNING:')} ${chalk.red.bold(strategy.trapWarning)}`,
+    `• ${chalk.red.bold('⚠️ Bull Trap:')} ${strategy.trapWarning.bullTrap}`,
+    `• ${chalk.red.bold('⚠️ Bear Trap:')} ${strategy.trapWarning.bearTrap}`,
     `${chalk.gray('—'.repeat(60))}`,
     `💡 ${chalk.yellow.bold('GOLDEN RULE FOR TODAY')}`,
     `  ${chalk.italic.yellow(strategy.goldenRule)}`

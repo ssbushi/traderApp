@@ -1,5 +1,6 @@
 import * as dotenv from 'dotenv';
 import chalk from 'chalk';
+import boxen from 'boxen';
 import { connectToChrome } from './browser/connection';
 import { fetchSensibullData } from './browser/sensibull';
 import { fetchZerodhaData } from './browser/zerodha';
@@ -12,69 +13,59 @@ dotenv.config();
 const intervalMinutes = parseInt(process.env.INTERVAL_MINUTES || '5', 10);
 const intervalMs = intervalMinutes * 60 * 1000;
 
-function renderMarkdownInTerminal(markdown: string) {
-  const lines = markdown.split('\n');
-  for (const line of lines) {
-    let formatted = line;
+function printStrategyCard(strategy: StrategyResponse) {
+  let sentimentColor = chalk.white;
+  if (strategy.marketSentiment === 'BULLISH') sentimentColor = chalk.green.bold;
+  if (strategy.marketSentiment === 'BEARISH') sentimentColor = chalk.red.bold;
+  if (strategy.marketSentiment === 'NEUTRAL') sentimentColor = chalk.yellow.bold;
+  if (strategy.marketSentiment === 'HIGH_VOLATILITY_NO_TRADE') sentimentColor = chalk.magenta.bold;
 
-    // Headings
-    if (formatted.startsWith('# ')) {
-      console.log('\n' + chalk.bold.yellow(formatted.substring(2).toUpperCase()) + '\n');
-      continue;
-    }
-    if (formatted.startsWith('## ')) {
-      console.log('\n' + chalk.bold.cyan(formatted.substring(3)) + '\n');
-      continue;
-    }
-    if (formatted.startsWith('### ')) {
-      console.log('\n' + chalk.bold.underline.blue(formatted.substring(4)) + '\n');
-      continue;
-    }
+  const cardContent = [
+    `${chalk.cyan.bold('OUTLOOK:')} ${sentimentColor(strategy.marketSentiment)}  |  ${chalk.cyan.bold('STRATEGY:')} ${chalk.yellow.bold(strategy.strategyName)}`,
+    `${chalk.gray('—'.repeat(60))}`,
+    `${chalk.bold.underline('RANGE & CURRENT LOCATION')}`,
+    `• ${chalk.green.bold('Support:')} ${chalk.green(strategy.support)}   • ${chalk.red.bold('Resistance:')} ${chalk.red(strategy.resistance)}`,
+    `• ${chalk.bold('Current Status:')} ${chalk.cyan(strategy.currentPriceStatus)}`,
+    `${chalk.gray('—'.repeat(60))}`,
+    `${chalk.bold.underline('ACTIONABLE TRADE SETUPS')}`,
+    ``,
+    `🟢 ${chalk.green.bold('TRADE 1: LONG SETUP')}`,
+    `  ${chalk.bold('Trigger:')} ${strategy.longTrigger}`,
+    `  ${chalk.bold('Entry:')} ${chalk.green(strategy.longEntry)}  |  ${chalk.bold('SL:')} ${chalk.red(strategy.longStopLoss)}`,
+    `  ${chalk.bold('Targets:')} ${strategy.longTargets.map(t => chalk.green(t)).join(' ➔ ')}`,
+    ``,
+    `🔴 ${chalk.red.bold('TRADE 2: BREAKDOWN SHORT')}`,
+    `  ${chalk.bold('Trigger:')} ${strategy.breakdownTrigger}`,
+    `  ${chalk.bold('Entry:')} ${chalk.red(strategy.breakdownEntry)}  |  ${chalk.bold('SL:')} ${chalk.green(strategy.breakdownStopLoss)}`,
+    `  ${chalk.bold('Targets:')} ${strategy.breakdownTargets.map(t => chalk.red(t)).join(' ➔ ')}`,
+    ``,
+    `🔴 ${chalk.red.bold('TRADE 3: RESISTANCE SHORT')}`,
+    `  ${chalk.bold('Trigger:')} ${strategy.resistanceTrigger}`,
+    `  ${chalk.bold('Entry:')} ${chalk.red(strategy.resistanceEntry)}  |  ${chalk.bold('SL:')} ${chalk.green(strategy.resistanceStopLoss)}`,
+    `  ${chalk.bold('Targets:')} ${strategy.resistanceTargets.map(t => chalk.red(t)).join(' ➔ ')}`,
+    `${chalk.gray('—'.repeat(60))}`,
+    `${chalk.bold.underline('INSTITUTIONAL POSITIONING (OI)')}`,
+    strategy.institutionalOI.map(oi => `• ${oi}`).join('\n'),
+    `${chalk.gray('—'.repeat(60))}`,
+    `💡 ${chalk.yellow.bold('GOLDEN RULE FOR TODAY')}`,
+    `  ${chalk.italic.yellow(strategy.goldenRule)}`
+  ].join('\n');
 
-    // Horizontal rules
-    if (formatted.trim() === '---') {
-      console.log(chalk.gray('—'.repeat(60)));
-      continue;
-    }
+  let borderColor = 'yellow';
+  if (strategy.marketSentiment === 'BULLISH') borderColor = 'green';
+  if (strategy.marketSentiment === 'BEARISH') borderColor = 'red';
+  if (strategy.marketSentiment === 'HIGH_VOLATILITY_NO_TRADE') borderColor = 'magenta';
 
-    // Colorize inline content
-    // Replace **bold** with chalk bold colors
-    formatted = formatted.replace(/\*\*(.*?)\*\*/g, (_, p1) => {
-      const lower = p1.toLowerCase();
-      if (lower.includes('buy') || lower.includes('long') || lower.includes('support') || lower.includes('bullish') || lower.includes('✅')) {
-        return chalk.green.bold(p1);
-      }
-      if (lower.includes('sell') || lower.includes('short') || lower.includes('resistance') || lower.includes('bearish') || lower.includes('stop-loss') || lower.includes('stop loss')) {
-        return chalk.red.bold(p1);
-      }
-      return chalk.yellow.bold(p1);
-    });
+  const boxed = boxen(cardContent, {
+    padding: 1,
+    margin: 1,
+    borderStyle: 'double',
+    borderColor: borderColor as any,
+    title: chalk.bold.white(' 🤖 NIFTY OPTIONS SYSTEMATIC PLANS '),
+    titleAlignment: 'center'
+  });
 
-    // Replace ✅ with green ✅
-    formatted = formatted.replace(/✅/g, chalk.green('✅'));
-
-    // Highlight key trading terms in non-bold text
-    formatted = formatted.replace(/\b(BUY|LONG|BULLISH|SUPPORT)\b/g, chalk.green('$1'));
-    formatted = formatted.replace(/\b(SELL|SHORT|BEARISH|RESISTANCE|STOP-LOSS|STOP LOSS)\b/g, chalk.red('$1'));
-
-    // Tables
-    if (formatted.trim().startsWith('|')) {
-      if (formatted.includes('---')) {
-        console.log(chalk.gray(formatted));
-      } else {
-        // Color table rows
-        console.log(chalk.blue(formatted));
-      }
-      continue;
-    }
-
-    // Bullet points
-    if (formatted.trim().startsWith('*') || formatted.trim().startsWith('-')) {
-      console.log('  ' + chalk.white(formatted.trim().substring(1).trim()));
-    } else {
-      console.log(formatted);
-    }
-  }
+  console.log(boxed);
 }
 
 async function runPipeline() {
@@ -95,9 +86,7 @@ async function runPipeline() {
     const strategy = await generateStrategy(zerodhaData, sensibullData);
     logInfo('Synthesized strategy analysis successfully.\n');
 
-    console.log(chalk.gray('='.repeat(60)));
-    renderMarkdownInTerminal(strategy.markdownReport);
-    console.log(chalk.gray('='.repeat(60)));
+    printStrategyCard(strategy);
 
     console.log(chalk.gray(`\nNext analysis cycle in ${intervalMinutes} minutes at ${new Date(Date.now() + intervalMs).toLocaleTimeString()}...\n`));
 

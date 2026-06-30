@@ -1,6 +1,6 @@
 # NIFTY Options Analysis AI Co-Pilot
 
-An automated command-line assistant designed to help NIFTY options traders make informed decisions. It connects to your active **Zerodha Kite** and **Sensibull** browser tabs, extracts live technical chart indicators and options metrics, and passes them to **OpenAI GPT-4o-Mini (via Genkit)** to synthesize a direct, suggestive, and highly actionable trading report.
+An automated command-line assistant designed to help NIFTY options traders make informed decisions. It connects to your active **Zerodha Kite** and **Sensibull** browser tabs, extracts live technical chart indicators and options metrics, and passes them to **OpenAI GPT-4o-Mini (via Genkit)** to synthesize a short, systematic, and highly actionable trading dashboard card.
 
 ---
 
@@ -9,8 +9,8 @@ An automated command-line assistant designed to help NIFTY options traders make 
 1. **Shared Browser (CDP):** The script attaches to a running session of Google Chrome via the Chrome DevTools Protocol (CDP) on port `9222`. This bypasses complex 2FA logins and CAPTCHAs, running the script safely alongside your active trading routine.
 2. **Sensibull Scraping:** The script intercepts the intraday option chain responses (`/compute_intraday`) to gather spot price, Put-Call Ratio (PCR), Open Interest (OI) changes, Max Pain, and Implied Volatility (IV).
 3. **Zerodha Chart Scraping:** The script reloads the chart window to fetch the latest tick candle, toggles the Table View panel inside the chart iframe, downloads the indicators in memory, and reads CPR (Pivot, BC, TC), ATR, and ADX/DMI (+DI, -DI).
-4. **AI Generation:** The script merges these datasets and feeds them to OpenAI, generating a detailed, suggestive trading guide containing market structure ranges, specific trade setups (buys, shorts, breakout actions), institutional positioning, and a decision matrix table.
-5. **Continuous Loop:** By default, it updates and prints a fresh strategy report in your terminal every 5 minutes.
+4. **AI Generation:** The script merges these datasets and feeds them to OpenAI, generating a highly structured options strategy specifying support/resistance levels, exact trade setups (triggers, entries, stop-losses, and targets) for three trade plans, institutional strike positioning, and daily golden rules.
+5. **Continuous Loop:** By default, it updates and prints a fresh double-bordered dashboard strategy card in your terminal every 5 minutes.
 
 ---
 

@@ -1,6 +1,7 @@
 import { Page } from 'playwright';
 import chalk from 'chalk';
 import * as fs from 'fs';
+import { logDebug } from '../utils/logger';
 
 export interface SensibullData {
   price?: number;
@@ -19,7 +20,7 @@ export interface SensibullData {
 }
 
 export async function fetchSensibullData(page: Page): Promise<SensibullData> {
-  console.log(chalk.blue('Waiting for Sensibull data interception...'));
+  logDebug(chalk.blue('Waiting for Sensibull data interception...'));
 
   // Setup interception promise
   const responsePromise = page.waitForResponse(
@@ -35,7 +36,7 @@ export async function fetchSensibullData(page: Page): Promise<SensibullData> {
 
   // Bring to front and trigger a reload to force the API call
   await page.bringToFront();
-  console.log(chalk.blue('Reloading Sensibull page to capture API payload...'));
+  logDebug(chalk.blue('Reloading Sensibull page to capture API payload...'));
   await page.reload({ waitUntil: 'domcontentloaded' });
 
   const response = await responsePromise;
@@ -43,21 +44,21 @@ export async function fetchSensibullData(page: Page): Promise<SensibullData> {
     throw new Error('Failed to intercept Sensibull compute_intraday API response within 20 seconds.');
   }
 
-  console.log(chalk.green('Successfully intercepted Sensibull API response!'));
-  console.log(chalk.blue(`Intercepted URL: ${response.url()}`));
+  logDebug(chalk.green('Successfully intercepted Sensibull API response!'));
+  logDebug(chalk.blue(`Intercepted URL: ${response.url()}`));
   
   const rawJson = await response.json();
 
   // Save the raw JSON payload to a workspace file for easy inspection
   try {
     fs.writeFileSync('./sensibull_dump.json', JSON.stringify(rawJson, null, 2), 'utf8');
-    console.log(chalk.green('[Diagnostic Check] Full Sensibull JSON has been written to: ./sensibull_dump.json'));
-    console.log(chalk.blue(`JSON Root Keys: ${Object.keys(rawJson).join(', ')}`));
+    logDebug(chalk.green('[Diagnostic Check] Full Sensibull JSON has been written to: ./sensibull_dump.json'));
+    logDebug(chalk.blue(`JSON Root Keys: ${Object.keys(rawJson).join(', ')}`));
     if (rawJson.data) {
-      console.log(chalk.blue(`JSON "data" sub-keys: ${Object.keys(rawJson.data).join(', ')}`));
+      logDebug(chalk.blue(`JSON "data" sub-keys: ${Object.keys(rawJson.data).join(', ')}`));
     }
   } catch (err: any) {
-    console.log(chalk.yellow(`Could not save JSON diagnostics: ${err.message}`));
+    logDebug(chalk.yellow(`Could not save JSON diagnostics: ${err.message}`));
   }
 
   // Resiliently attempt to parse key high-level indicators if they exist in common structures
@@ -129,20 +130,20 @@ export async function fetchSensibullData(page: Page): Promise<SensibullData> {
       }
     }
   } catch (err: any) {
-    console.log(chalk.yellow(`Warning: Error parsing standard fields from Sensibull JSON: ${err.message}`));
+    logDebug(chalk.yellow(`Warning: Error parsing standard fields from Sensibull JSON: ${err.message}`));
   }
 
-  console.log(chalk.blue('\n--- Extracted Sensibull Metrics ---'));
-  console.log(`  Price: ${price ?? 'N/A'}`);
-  console.log(`  PCR: ${pcr ?? 'N/A'}`);
-  console.log(`  Max Pain: ${maxPain ?? 'N/A'}`);
-  console.log(`  India VIX: ${indiaVix ?? 'N/A'}`);
-  console.log(`  IV Percentile: ${ivPercentile ?? 'N/A'}`);
-  console.log(`  Expiry Used: ${expiryUsed ?? 'N/A'}`);
-  console.log(`  Call OI: ${callOi ?? 'N/A'} (Change: ${callOiChange ?? 'N/A'})`);
-  console.log(`  Put OI: ${putOi ?? 'N/A'} (Change: ${putOiChange ?? 'N/A'})`);
-  console.log(`  Future OI: ${futureOi ?? 'N/A'} (Change: ${futureOiChange ?? 'N/A'})`);
-  console.log('-----------------------------------\n');
+  logDebug(chalk.blue('\n--- Extracted Sensibull Metrics ---'));
+  logDebug(`  Price: ${price ?? 'N/A'}`);
+  logDebug(`  PCR: ${pcr ?? 'N/A'}`);
+  logDebug(`  Max Pain: ${maxPain ?? 'N/A'}`);
+  logDebug(`  India VIX: ${indiaVix ?? 'N/A'}`);
+  logDebug(`  IV Percentile: ${ivPercentile ?? 'N/A'}`);
+  logDebug(`  Expiry Used: ${expiryUsed ?? 'N/A'}`);
+  logDebug(`  Call OI: ${callOi ?? 'N/A'} (Change: ${callOiChange ?? 'N/A'})`);
+  logDebug(`  Put OI: ${putOi ?? 'N/A'} (Change: ${putOiChange ?? 'N/A'})`);
+  logDebug(`  Future OI: ${futureOi ?? 'N/A'} (Change: ${futureOiChange ?? 'N/A'})`);
+  logDebug('-----------------------------------\n');
 
   return {
     price,

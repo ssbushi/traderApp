@@ -2,6 +2,7 @@ import { Page } from 'playwright';
 import csv from 'csv-parser';
 import * as fs from 'fs';
 import chalk from 'chalk';
+import { logDebug, logInfo } from '../utils/logger';
 
 export interface ZerodhaData {
   datetime: string;
@@ -52,11 +53,11 @@ function parseZerodhaDate(dateStr: string): Date {
 }
 
 export async function fetchZerodhaData(page: Page): Promise<ZerodhaData> {
-  console.log(chalk.blue('Reloading Zerodha Kite page to fetch latest chart data...'));
+  logDebug(chalk.blue('Reloading Zerodha Kite page to fetch latest chart data...'));
   await page.bringToFront();
   await page.reload({ waitUntil: 'domcontentloaded' });
 
-  console.log(chalk.blue('Waiting dynamically for chart frame and controls to load...'));
+  logDebug(chalk.blue('Waiting dynamically for chart frame and controls to load...'));
 
   const tableSelectors = [
     'cq-toggle.tableview-ui',
@@ -105,7 +106,7 @@ export async function fetchZerodhaData(page: Page): Promise<ZerodhaData> {
 
   for (let attempt = 0; attempt < attempts.length; attempt++) {
     const maxWaitMs = attempts[attempt];
-    console.log(chalk.blue(`Attempt ${attempt + 1}: Searching for chart controls (timeout: ${maxWaitMs / 1000}s)...`));
+    logDebug(chalk.blue(`Attempt ${attempt + 1}: Searching for chart controls (timeout: ${maxWaitMs / 1000}s)...`));
     
     const startTime = Date.now();
     const pollIntervalMs = 500;
@@ -160,9 +161,9 @@ export async function fetchZerodhaData(page: Page): Promise<ZerodhaData> {
 
     // If we failed this attempt, log warning and backoff
     if (attempt < attempts.length - 1) {
-      console.log(chalk.yellow(`Attempt ${attempt + 1} timed out. Backing off...`));
+      logDebug(chalk.yellow(`Attempt ${attempt + 1} timed out. Backing off...`));
       if (!chartFrame) {
-        console.log(chalk.blue('Chart frame not found. Triggering a soft page reload before next attempt...'));
+        logDebug(chalk.blue('Chart frame not found. Triggering a soft page reload before next attempt...'));
         await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
       }
     }
@@ -173,11 +174,11 @@ export async function fetchZerodhaData(page: Page): Promise<ZerodhaData> {
   }
 
   const searchContext = chartFrame;
-  console.log(chalk.green(`Active chart frame established: ${chartFrame.url()}`));
+  logDebug(chalk.green(`Active chart frame established: ${chartFrame.url()}`));
 
   // If download button wasn't immediately visible but we found the Table View button, toggle it
   if (!downloadSelector && tableBtnLocator) {
-    console.log(chalk.blue('Toggling Table View to expose the Download button...'));
+    logDebug(chalk.blue('Toggling Table View to expose the Download button...'));
     await tableBtnLocator.click();
     await page.waitForTimeout(1500); // Wait for the table layout to render
     downloadSelector = await findVisibleDownloadButton(chartFrame);
@@ -264,7 +265,7 @@ export async function fetchZerodhaData(page: Page): Promise<ZerodhaData> {
     throw new Error('Failed to capture downloaded CSV file path.');
   }
 
-  console.log(chalk.green(`CSV downloaded successfully to temp file: ${downloadPath}`));
+  logDebug(chalk.green(`CSV downloaded successfully to temp file: ${downloadPath}`));
 
   // Parse CSV
   const rows: any[] = [];
@@ -287,8 +288,8 @@ export async function fetchZerodhaData(page: Page): Promise<ZerodhaData> {
 
   // Get the most recent row (usually the last row)
   const lastRow = rows[rows.length - 1];
-  console.log(chalk.blue('Parsing metrics from the latest chart row:'));
-  console.log(JSON.stringify(lastRow, null, 2));
+  logDebug(chalk.blue('Parsing metrics from the latest chart row:'));
+  logDebug(JSON.stringify(lastRow, null, 2));
 
   // Match columns case-insensitively
   const findVal = (keys: string[]): number | undefined => {
@@ -320,10 +321,10 @@ export async function fetchZerodhaData(page: Page): Promise<ZerodhaData> {
       console.log(chalk.red.bold(`\n[WARNING] Zerodha chart data is stale! Latest candle is from ${datetime} (${Math.round(timeDiffMins)} minutes ago).`));
       console.log(chalk.yellow('Please check if your Zerodha Kite chart tab is active and updating.\n'));
     } else {
-      console.log(chalk.green(`\n[Data Freshness Check] Zerodha data is fresh (last candle: ${datetime}, ${Math.round(timeDiffMins)} mins ago).\n`));
+      logInfo(`[Data Freshness Check] Zerodha data is fresh (last candle: ${datetime}, ${Math.round(timeDiffMins)} mins ago).`);
     }
   } catch (err: any) {
-    console.log(chalk.yellow(`Could not verify data freshness: ${err.message}`));
+    logDebug(chalk.yellow(`Could not verify data freshness: ${err.message}`));
   }
 
   const open = findVal(['open']) || 0;

@@ -56,49 +56,19 @@ export async function fetchZerodhaData(page: Page): Promise<ZerodhaData> {
   await page.bringToFront();
   await page.reload({ waitUntil: 'domcontentloaded' });
 
-  console.log(chalk.blue('Waiting for chart frame to load...'));
-  try {
-    await page.waitForSelector('iframe[name="chart-iframe"]', { timeout: 15000 });
-  } catch (e) {
-    console.log(chalk.yellow('Warning: Timed out waiting for iframe[name="chart-iframe"]. Proceeding anyway.'));
-  }
+  console.log(chalk.blue('Waiting dynamically for chart frame and controls to load...'));
 
-  // Find the actual chart iframe
-  // Prioritize the frame named "chart-iframe" or containing "chart.html"/"tv.kite.trade"
-  const frames = page.frames();
-  let chartFrame = null;
-  for (const f of frames) {
-    const name = f.name();
-    const url = f.url();
-    if (name === 'chart-iframe' || url.includes('/chartiq/chart.html') || url.includes('tv.kite.trade') || url.includes('chart.html')) {
-      chartFrame = f;
-      break;
-    }
-  }
+  const tableSelectors = [
+    'cq-toggle.tableview-ui',
+    'cq-toggle[cq-member="tableView"]',
+    'cq-toggle:has-text("Table View")',
+    '[title*="table" i]',
+    '[aria-label*="table" i]',
+    'button:has-text("Table")',
+    '[class*="table" i]',
+    '.ciq-table'
+  ];
 
-  // Fallback to broader checks if the specific frame wasn't found
-  if (!chartFrame) {
-    for (const f of frames) {
-      const url = f.url();
-      if (url.includes('chartiq') || url.includes('chart') || url.includes('tradingview')) {
-        // Skip the outer container page
-        if (url.includes('kite.zerodha.com/markets/ext/chart')) {
-          continue;
-        }
-        chartFrame = f;
-        break;
-      }
-    }
-  }
-
-  const searchContext = chartFrame || page;
-  if (chartFrame) {
-    console.log(chalk.green(`Found chart iframe: ${chartFrame.url()}`));
-  } else {
-    console.log(chalk.yellow('Chart iframe not found. Searching on the main page.'));
-  }
-
-  // Selector checks for the Download/Export button
   const customSelector = process.env.ZERODHA_DOWNLOAD_SELECTOR;
   const downloadSelectors = customSelector 
     ? [customSelector] 
@@ -118,54 +88,75 @@ export async function fetchZerodhaData(page: Page): Promise<ZerodhaData> {
         '.export-button'
       ];
 
+  let chartFrame: any = null;
+  let tableBtnLocator: any = null;
   let downloadSelector: string | null = null;
+  const maxWaitMs = 15000;
+  const pollIntervalMs = 500;
+  const startTime = Date.now();
 
-  // Helper to check if any download button is visible
-  const findVisibleDownloadButton = async (): Promise<string | null> => {
+  const findVisibleDownloadButton = async (frame: any): Promise<string | null> => {
     for (const sel of downloadSelectors) {
       try {
-        const isVisible = await searchContext.locator(sel).first().isVisible();
+        const isVisible = await frame.locator(sel).first().isVisible();
         if (isVisible) return sel;
       } catch {}
     }
     return null;
   };
 
-  // Try finding it directly
-  downloadSelector = await findVisibleDownloadButton();
-
-  // If not visible, try to toggle Table View (required for ChartIQ)
-  if (!downloadSelector) {
-    console.log(chalk.blue('Download button not immediately visible. Attempting to toggle Table View...'));
-    const tableSelectors = [
-      'cq-toggle.tableview-ui',
-      'cq-toggle[cq-member="tableView"]',
-      'cq-toggle:has-text("Table View")',
-      '[title*="table" i]',
-      '[aria-label*="table" i]',
-      'button:has-text("Table")',
-      '[class*="table" i]',
-      '.ciq-table'
-    ];
-
-    let tableToggled = false;
-    for (const sel of tableSelectors) {
-      try {
-        const btn = searchContext.locator(sel).first();
-        if (await btn.isVisible()) {
-          console.log(chalk.blue(`Found Table View toggle button: "${sel}". Clicking...`));
-          await btn.click();
-          tableToggled = true;
-          break;
-        }
-      } catch {}
+  while (Date.now() - startTime < maxWaitMs) {
+    // 1. Locate the actual chart iframe
+    const frames = page.frames();
+    for (const f of frames) {
+      const name = f.name();
+      const url = f.url();
+      if (name === 'chart-iframe' || url.includes('/chartiq/chart.html') || url.includes('tv.kite.trade') || url.includes('chart.html')) {
+        chartFrame = f;
+        break;
+      }
     }
 
-    if (tableToggled) {
-      console.log(chalk.blue('Table View toggled. Waiting for the Download button to render...'));
-      await page.waitForTimeout(2000); // Allow table rendering time (increased for page reloads)
-      downloadSelector = await findVisibleDownloadButton();
+    if (chartFrame) {
+      // Check if Download button is already visible (e.g. TradingView or already in table view)
+      const visibleDownload = await findVisibleDownloadButton(chartFrame);
+      if (visibleDownload) {
+        downloadSelector = visibleDownload;
+        break;
+      }
+
+      // Check if Table View button is visible
+      for (const sel of tableSelectors) {
+        try {
+          const btn = chartFrame.locator(sel).first();
+          if (await btn.isVisible()) {
+            tableBtnLocator = btn;
+            break;
+          }
+        } catch {}
+      }
+
+      if (tableBtnLocator) {
+        break;
+      }
     }
+
+    await page.waitForTimeout(pollIntervalMs);
+  }
+
+  if (!chartFrame) {
+    throw new Error('Chart iframe not found after page reload.');
+  }
+
+  const searchContext = chartFrame;
+  console.log(chalk.green(`Active chart frame established: ${chartFrame.url()}`));
+
+  // If download button wasn't immediately visible but we found the Table View button, toggle it
+  if (!downloadSelector && tableBtnLocator) {
+    console.log(chalk.blue('Toggling Table View to expose the Download button...'));
+    await tableBtnLocator.click();
+    await page.waitForTimeout(1500); // Wait for the table layout to render
+    downloadSelector = await findVisibleDownloadButton(chartFrame);
   }
 
   if (!downloadSelector) {

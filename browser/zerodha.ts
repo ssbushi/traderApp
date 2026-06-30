@@ -178,10 +178,27 @@ export async function fetchZerodhaData(page: Page): Promise<ZerodhaData> {
 
   // If download button wasn't immediately visible but we found the Table View button, toggle it
   if (!downloadSelector && tableBtnLocator) {
-    logDebug(chalk.blue('Toggling Table View to expose the Download button...'));
-    await tableBtnLocator.click();
-    await page.waitForTimeout(1500); // Wait for the table layout to render
-    downloadSelector = await findVisibleDownloadButton(chartFrame);
+    const isAlreadyActive = await tableBtnLocator.evaluate((el: Element) => el.classList.contains('active'));
+    if (isAlreadyActive) {
+      logDebug(chalk.blue('Table View is already active, waiting for Download button to render...'));
+      // Wait and poll for the download button to appear (it may take a moment to render)
+      const startTime = Date.now();
+      while (Date.now() - startTime < 5000) {
+        downloadSelector = await findVisibleDownloadButton(chartFrame);
+        if (downloadSelector) break;
+        await page.waitForTimeout(500);
+      }
+    } else {
+      logDebug(chalk.blue('Toggling Table View to expose the Download button...'));
+      await tableBtnLocator.click();
+      // Wait and poll for the download button to appear
+      const startTime = Date.now();
+      while (Date.now() - startTime < 5000) {
+        downloadSelector = await findVisibleDownloadButton(chartFrame);
+        if (downloadSelector) break;
+        await page.waitForTimeout(500);
+      }
+    }
   }
 
   if (!downloadSelector) {

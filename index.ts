@@ -47,6 +47,13 @@ function printStrategyCard(strategy: StrategyResponse) {
     `${chalk.bold.underline('INSTITUTIONAL POSITIONING (OI)')}`,
     strategy.institutionalOI.map(oi => `• ${oi}`).join('\n'),
     `${chalk.gray('—'.repeat(60))}`,
+    `${chalk.bold.underline('💥 SYSTEM RISK METRICS & ALERTS')}`,
+    `• ${chalk.yellow.bold('Max Ceiling (OI):')} ${strategy.maxCeiling}  |  ${chalk.cyan.bold('Max Floor (OI):')} ${strategy.maxFloor}`,
+    `• ${chalk.red.bold('Gamma Squeeze Level:')} ${strategy.gammaSqueeze}`,
+    `• ${chalk.yellow.bold('Violent Reaction Zone:')} ${strategy.violentReactionZone}`,
+    `• ${chalk.green.bold('Bounce Probability:')} ${strategy.bounceProbability}`,
+    `• ${chalk.red.bold('⚠️ TRAP WARNING:')} ${chalk.red.bold(strategy.trapWarning)}`,
+    `${chalk.gray('—'.repeat(60))}`,
     `💡 ${chalk.yellow.bold('GOLDEN RULE FOR TODAY')}`,
     `  ${chalk.italic.yellow(strategy.goldenRule)}`
   ].join('\n');

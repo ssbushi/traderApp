@@ -72,6 +72,11 @@ Compute specific strike prices, boundaries, target numbers, and stop-loss levels
 5. **resistanceTrigger, resistanceEntry, resistanceStopLoss, resistanceTargets:** Construct a resistance rejection short trade.
 6. **institutionalOI:** Generate 3-4 direct strikes highlights (e.g., "[Strike]: [OI behavior] -> [Resistance/Support strength]").
 7. **goldenRule:** Formulate one strict behavioral rule for today (e.g. "Never trade in the middle of the range when CPR is wide").
+8. **maxCeiling & maxFloor:** Identify the highest open interest Call strike (Ceiling) and Put strike (Floor) from the options metrics.
+9. **gammaSqueeze:** Pinpoint the price level where short covering is likely to trigger a rapid rally or drop (usually above/below the heavy writing strikes).
+10. **violentReactionZone:** Specify a key level (e.g. Pivot, heavy OI zone) where the order book is dense and price is expected to react sharply.
+11. **trapWarning:** Formulate a warning indicating where retail buyers or sellers are likely to get trapped on false breakouts or pullbacks.
+12. **bounceProbability:** Estimate the mathematical probability of support/resistance holding (e.g., "70% at 23900") based on PCR and DI indicators.
 `;
 
   const response = await ai.generate({

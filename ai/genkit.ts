@@ -38,6 +38,12 @@ export const StrategySchema = z.object({
   
   institutionalOI: z.array(z.string()).describe('List of 3-4 bullet points summarizing what institutions are doing on key strikes (e.g., "24000: Heavy fresh call writing -> strong ceiling")'),
   goldenRule: z.string().describe('One direct trading advice rule for today based on current conditions'),
+  gammaSqueeze: z.string().describe('Price level/zone where short covering/squeeze is likely to trigger (e.g. "Above 24000")'),
+  maxCeiling: z.number().describe('Ultimate resistance level (highest Call OI strike)'),
+  maxFloor: z.number().describe('Ultimate support level (highest Put OI strike)'),
+  violentReactionZone: z.string().describe('Level/zone where price is expected to react violently (e.g. "23900 or 23980")'),
+  trapWarning: z.string().describe('Short warning description of where retail traders will get trapped today (e.g. "Chasing longs in the middle of range")'),
+  bounceProbability: z.string().describe('Estimated probability of a bounce and key level (e.g. "70% at 23900")'),
 });
 
 export type StrategyResponse = z.infer<typeof StrategySchema>;

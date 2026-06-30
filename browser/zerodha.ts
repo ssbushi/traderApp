@@ -23,14 +23,31 @@ export async function fetchZerodhaData(page: Page): Promise<ZerodhaData> {
   console.log(chalk.blue('Locating Zerodha Chart frame...'));
   await page.bringToFront();
 
-  // Find the TradingView iframe
+  // Find the actual chart iframe
+  // Prioritize the frame named "chart-iframe" or containing "chart.html"/"tv.kite.trade"
   const frames = page.frames();
   let chartFrame = null;
   for (const f of frames) {
+    const name = f.name();
     const url = f.url();
-    if (url.includes('tv.kite.trade') || url.includes('chartiq') || url.includes('chart') || url.includes('tradingview')) {
+    if (name === 'chart-iframe' || url.includes('/chartiq/chart.html') || url.includes('tv.kite.trade') || url.includes('chart.html')) {
       chartFrame = f;
       break;
+    }
+  }
+
+  // Fallback to broader checks if the specific frame wasn't found
+  if (!chartFrame) {
+    for (const f of frames) {
+      const url = f.url();
+      if (url.includes('chartiq') || url.includes('chart') || url.includes('tradingview')) {
+        // Skip the outer container page
+        if (url.includes('kite.zerodha.com/markets/ext/chart')) {
+          continue;
+        }
+        chartFrame = f;
+        break;
+      }
     }
   }
 

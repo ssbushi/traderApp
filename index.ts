@@ -1,6 +1,8 @@
 import * as dotenv from 'dotenv';
 import chalk from 'chalk';
 import boxen from 'boxen';
+import * as fs from 'fs';
+import * as path from 'path';
 import { connectToChrome } from './browser/connection';
 import { fetchSensibullData } from './browser/sensibull';
 import { fetchZerodhaData } from './browser/zerodha';
@@ -12,6 +14,66 @@ dotenv.config();
 
 const intervalMinutes = parseInt(process.env.INTERVAL_MINUTES || '5', 10);
 const intervalMs = intervalMinutes * 60 * 1000;
+const historyFilePath = path.join(process.cwd(), 'analysis_history.json');
+
+function cleanOldHistory() {
+  try {
+    if (fs.existsSync(historyFilePath)) {
+      const fileData = fs.readFileSync(historyFilePath, 'utf8');
+      if (fileData.trim()) {
+        const history = JSON.parse(fileData);
+        if (history.length > 0) {
+          const lastEntry = history[history.length - 1];
+          const lastDate = new Date(lastEntry.timestamp).toDateString();
+          const todayDate = new Date().toDateString();
+          
+          if (lastDate !== todayDate) {
+            logDebug(`[New Day Detected] Wiping old history from ${lastDate}.`);
+            fs.writeFileSync(historyFilePath, '[]', 'utf8');
+          }
+        }
+      }
+    }
+  } catch (e) {}
+}
+
+function getPreviousAnalysis(): StrategyResponse | undefined {
+  try {
+    if (fs.existsSync(historyFilePath)) {
+      const fileData = fs.readFileSync(historyFilePath, 'utf8');
+      if (fileData.trim()) {
+        const history = JSON.parse(fileData);
+        if (history.length > 0) {
+          return history[history.length - 1];
+        }
+      }
+    }
+  } catch (e) {}
+  return undefined;
+}
+
+function saveAnalysisToHistory(strategy: StrategyResponse) {
+  try {
+    let history: any[] = [];
+    if (fs.existsSync(historyFilePath)) {
+      const fileData = fs.readFileSync(historyFilePath, 'utf8');
+      if (fileData.trim()) {
+        history = JSON.parse(fileData);
+      }
+    }
+    
+    const entry = {
+      timestamp: new Date().toISOString(),
+      ...strategy
+    };
+    
+    history.push(entry);
+    fs.writeFileSync(historyFilePath, JSON.stringify(history, null, 2), 'utf8');
+    logDebug(`Saved analysis to history at ${historyFilePath}`);
+  } catch (err: any) {
+    logDebug(`Warning: Could not save strategy history: ${err.message}`);
+  }
+}
 
 function printStrategyCard(strategy: StrategyResponse) {
   let sentimentColor = chalk.white;
@@ -91,10 +153,12 @@ async function runPipeline() {
     logInfo('Successfully fetched Sensibull option metrics.');
 
     logDebug('Synthesizing data and invoking OpenAI model...');
-    const strategy = await generateStrategy(zerodhaData, sensibullData);
+    const previousStrategy = getPreviousAnalysis();
+    const strategy = await generateStrategy(zerodhaData, sensibullData, previousStrategy);
     logInfo('Synthesized strategy analysis successfully.\n');
 
     printStrategyCard(strategy);
+    saveAnalysisToHistory(strategy);
 
     console.log(chalk.gray(`\nNext analysis cycle in ${intervalMinutes} minutes at ${new Date(Date.now() + intervalMs).toLocaleTimeString()}...\n`));
 
@@ -106,6 +170,7 @@ async function runPipeline() {
 
 async function main() {
   console.clear();
+  cleanOldHistory();
   if (isDebug) {
     console.log(chalk.yellow.bold('=============================================='));
     console.log(chalk.yellow.bold('    NIFTY Option Analysis AI Pipeline CLI      '));

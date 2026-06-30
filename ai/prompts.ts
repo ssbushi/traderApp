@@ -7,9 +7,26 @@ import { logDebug } from '../utils/logger';
 
 export async function generateStrategy(
   zerodha: ZerodhaData,
-  sensibull: SensibullData
+  sensibull: SensibullData,
+  previousStrategy?: StrategyResponse
 ): Promise<StrategyResponse> {
   logDebug(chalk.blue('Sending aggregated metrics and option chain data to OpenAI...'));
+
+  let previousContext = '';
+  if (previousStrategy) {
+    previousContext = `
+#### 3. Previous Strategy Analysis (From 5 Minutes Ago)
+- **Previous Outlook:** ${previousStrategy.marketSentiment}
+- **Previous Strategy Name:** ${previousStrategy.strategyName}
+- **Previous Range:** Support: ${previousStrategy.support} | Resistance: ${previousStrategy.resistance}
+- **Previous Current Status:** ${previousStrategy.currentPriceStatus}
+- **Previous Rules & Squeezes:** Gamma Squeeze: ${previousStrategy.gammaSqueeze} | Violent Zone: ${previousStrategy.violentReactionZone}
+- **Previous Traps:** Bull Trap: ${previousStrategy.trapWarning.bullTrap} | Bear Trap: ${previousStrategy.trapWarning.bearTrap}
+- **Previous Golden Rule:** ${previousStrategy.goldenRule}
+
+*Important Continuity Rule:* Maintain consistency with the previous strategy setups and key ranges. Strike boundaries and action triggers should remain stable unless the underlying spot chart or options OI distribution has clearly shifted (e.g. price broke out, DMI crossed, or heavy call/put OI additions changed).
+`;
+  }
 
   const promptText = `
 You are an expert options trading quantitative strategist specialized in NIFTY options trading.
@@ -42,6 +59,7 @@ Your goal is to synthesize the provided technical chart indicators (Zerodha) and
 - **Call OI:** ${sensibull.callOi ?? 'N/A'} (Change: ${sensibull.callOiChange ?? 'N/A'})
 - **Put OI:** ${sensibull.putOi ?? 'N/A'} (Change: ${sensibull.putOiChange ?? 'N/A'})
 - **Future OI:** ${sensibull.futureOi ?? 'N/A'} (Change: ${sensibull.futureOiChange ?? 'N/A'})
+${previousContext}
 
 ---
 

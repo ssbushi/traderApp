@@ -46,8 +46,13 @@ export async function fetchZerodhaData(page: Page): Promise<ZerodhaData> {
   const downloadSelectors = customSelector 
     ? [customSelector] 
     : [
+        'text="Download"',
+        'text="Export"',
         'button:has-text("Download")',
         'button:has-text("Export")',
+        'div:has-text("Download")',
+        'span:has-text("Download")',
+        '[class*="btn" i]:has-text("Download")',
         '[title*="Download" i]',
         '[title*="Export" i]',
         '[aria-label*="Download" i]',

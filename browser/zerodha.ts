@@ -19,9 +19,49 @@ export interface ZerodhaData {
   rawRow: any;
 }
 
+function parseZerodhaDate(dateStr: string): Date {
+  const now = new Date();
+  
+  if (dateStr.includes('-')) {
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) return d;
+  }
+  
+  // Parse "DD/MM HH:mm" (e.g., "29/06 15:10" or "29/06 3:10")
+  const parts = dateStr.trim().split(/\s+/);
+  if (parts.length === 2) {
+    const dateParts = parts[0].split('/');
+    const timeParts = parts[1].split(':');
+    
+    if (dateParts.length === 2 && timeParts.length >= 2) {
+      const day = parseInt(dateParts[0], 10);
+      const month = parseInt(dateParts[1], 10) - 1; // Date month is 0-indexed
+      const hour = parseInt(timeParts[0], 10);
+      const minute = parseInt(timeParts[1], 10);
+      
+      const parsed = new Date(now.getFullYear(), month, day, hour, minute);
+      // Adjust if we parsed in the future due to year boundaries
+      if (parsed.getTime() > now.getTime() + 86400000) {
+        parsed.setFullYear(now.getFullYear() - 1);
+      }
+      return parsed;
+    }
+  }
+  
+  return now;
+}
+
 export async function fetchZerodhaData(page: Page): Promise<ZerodhaData> {
-  console.log(chalk.blue('Locating Zerodha Chart frame...'));
+  console.log(chalk.blue('Reloading Zerodha Kite page to fetch latest chart data...'));
   await page.bringToFront();
+  await page.reload({ waitUntil: 'domcontentloaded' });
+
+  console.log(chalk.blue('Waiting for chart frame to load...'));
+  try {
+    await page.waitForSelector('iframe[name="chart-iframe"]', { timeout: 15000 });
+  } catch (e) {
+    console.log(chalk.yellow('Warning: Timed out waiting for iframe[name="chart-iframe"]. Proceeding anyway.'));
+  }
 
   // Find the actual chart iframe
   // Prioritize the frame named "chart-iframe" or containing "chart.html"/"tv.kite.trade"
@@ -123,7 +163,7 @@ export async function fetchZerodhaData(page: Page): Promise<ZerodhaData> {
 
     if (tableToggled) {
       console.log(chalk.blue('Table View toggled. Waiting for the Download button to render...'));
-      await page.waitForTimeout(1000); // Allow table rendering time
+      await page.waitForTimeout(2000); // Allow table rendering time (increased for page reloads)
       downloadSelector = await findVisibleDownloadButton();
     }
   }
@@ -255,6 +295,21 @@ export async function fetchZerodhaData(page: Page): Promise<ZerodhaData> {
     return lk.includes('date') || lk.includes('time');
   }) || rowKeys[0];
   const datetime = lastRow[dateKey] || new Date().toISOString();
+
+  // Verify if data is stale (> 10 minutes)
+  try {
+    const parsedDate = parseZerodhaDate(datetime);
+    const timeDiffMs = Date.now() - parsedDate.getTime();
+    const timeDiffMins = timeDiffMs / 60000;
+    if (timeDiffMins > 10) {
+      console.log(chalk.red.bold(`\n[WARNING] Zerodha chart data is stale! Latest candle is from ${datetime} (${Math.round(timeDiffMins)} minutes ago).`));
+      console.log(chalk.yellow('Please check if your Zerodha Kite chart tab is active and updating.\n'));
+    } else {
+      console.log(chalk.green(`\n[Data Freshness Check] Zerodha data is fresh (last candle: ${datetime}, ${Math.round(timeDiffMins)} mins ago).\n`));
+    }
+  } catch (err: any) {
+    console.log(chalk.yellow(`Could not verify data freshness: ${err.message}`));
+  }
 
   const open = findVal(['open']) || 0;
   const high = findVal(['high']) || 0;

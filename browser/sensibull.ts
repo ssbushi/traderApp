@@ -1,5 +1,6 @@
 import { Page } from 'playwright';
 import chalk from 'chalk';
+import * as fs from 'fs';
 
 export interface SensibullData {
   price?: number;
@@ -37,7 +38,21 @@ export async function fetchSensibullData(page: Page): Promise<SensibullData> {
   }
 
   console.log(chalk.green('Successfully intercepted Sensibull API response!'));
+  console.log(chalk.blue(`Intercepted URL: ${response.url()}`));
+  
   const rawJson = await response.json();
+
+  // Save the raw JSON payload to a workspace file for easy inspection
+  try {
+    fs.writeFileSync('./sensibull_dump.json', JSON.stringify(rawJson, null, 2), 'utf8');
+    console.log(chalk.green('[Diagnostic Check] Full Sensibull JSON has been written to: ./sensibull_dump.json'));
+    console.log(chalk.blue(`JSON Root Keys: ${Object.keys(rawJson).join(', ')}`));
+    if (rawJson.data) {
+      console.log(chalk.blue(`JSON "data" sub-keys: ${Object.keys(rawJson.data).join(', ')}`));
+    }
+  } catch (err: any) {
+    console.log(chalk.yellow(`Could not save JSON diagnostics: ${err.message}`));
+  }
 
   // Resiliently attempt to parse key high-level indicators if they exist in common structures
   let price: number | undefined;

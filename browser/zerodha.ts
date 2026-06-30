@@ -88,12 +88,10 @@ export async function fetchZerodhaData(page: Page): Promise<ZerodhaData> {
         '.export-button'
       ];
 
+  const attempts = [5000, 10000, 15000];
   let chartFrame: any = null;
   let tableBtnLocator: any = null;
   let downloadSelector: string | null = null;
-  const maxWaitMs = 15000;
-  const pollIntervalMs = 500;
-  const startTime = Date.now();
 
   const findVisibleDownloadButton = async (frame: any): Promise<string | null> => {
     for (const sel of downloadSelectors) {
@@ -105,43 +103,69 @@ export async function fetchZerodhaData(page: Page): Promise<ZerodhaData> {
     return null;
   };
 
-  while (Date.now() - startTime < maxWaitMs) {
-    // 1. Locate the actual chart iframe
-    const frames = page.frames();
-    for (const f of frames) {
-      const name = f.name();
-      const url = f.url();
-      if (name === 'chart-iframe' || url.includes('/chartiq/chart.html') || url.includes('tv.kite.trade') || url.includes('chart.html')) {
-        chartFrame = f;
-        break;
+  for (let attempt = 0; attempt < attempts.length; attempt++) {
+    const maxWaitMs = attempts[attempt];
+    console.log(chalk.blue(`Attempt ${attempt + 1}: Searching for chart controls (timeout: ${maxWaitMs / 1000}s)...`));
+    
+    const startTime = Date.now();
+    const pollIntervalMs = 500;
+    
+    chartFrame = null;
+    tableBtnLocator = null;
+    downloadSelector = null;
+
+    while (Date.now() - startTime < maxWaitMs) {
+      // 1. Locate the actual chart iframe
+      const frames = page.frames();
+      for (const f of frames) {
+        const name = f.name();
+        const url = f.url();
+        if (name === 'chart-iframe' || url.includes('/chartiq/chart.html') || url.includes('tv.kite.trade') || url.includes('chart.html')) {
+          chartFrame = f;
+          break;
+        }
       }
+
+      if (chartFrame) {
+        // Check if Download button is already visible (e.g. TradingView or already in table view)
+        const visibleDownload = await findVisibleDownloadButton(chartFrame);
+        if (visibleDownload) {
+          downloadSelector = visibleDownload;
+          break;
+        }
+
+        // Check if Table View button is visible
+        for (const sel of tableSelectors) {
+          try {
+            const btn = chartFrame.locator(sel).first();
+            if (await btn.isVisible()) {
+              tableBtnLocator = btn;
+              break;
+            }
+          } catch {}
+        }
+
+        if (tableBtnLocator) {
+          break;
+        }
+      }
+
+      await page.waitForTimeout(pollIntervalMs);
     }
 
-    if (chartFrame) {
-      // Check if Download button is already visible (e.g. TradingView or already in table view)
-      const visibleDownload = await findVisibleDownloadButton(chartFrame);
-      if (visibleDownload) {
-        downloadSelector = visibleDownload;
-        break;
-      }
-
-      // Check if Table View button is visible
-      for (const sel of tableSelectors) {
-        try {
-          const btn = chartFrame.locator(sel).first();
-          if (await btn.isVisible()) {
-            tableBtnLocator = btn;
-            break;
-          }
-        } catch {}
-      }
-
-      if (tableBtnLocator) {
-        break;
-      }
+    // Break early if we succeeded
+    if (chartFrame && (downloadSelector || tableBtnLocator)) {
+      break;
     }
 
-    await page.waitForTimeout(pollIntervalMs);
+    // If we failed this attempt, log warning and backoff
+    if (attempt < attempts.length - 1) {
+      console.log(chalk.yellow(`Attempt ${attempt + 1} timed out. Backing off...`));
+      if (!chartFrame) {
+        console.log(chalk.blue('Chart frame not found. Triggering a soft page reload before next attempt...'));
+        await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      }
+    }
   }
 
   if (!chartFrame) {

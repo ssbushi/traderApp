@@ -4,8 +4,8 @@ import boxen from 'boxen';
 import * as fs from 'fs';
 import * as path from 'path';
 import { connectToChrome } from './browser/connection';
-import { fetchSensibullData } from './browser/sensibull';
-import { fetchZerodhaData } from './browser/zerodha';
+import { fetchSensibullData, SensibullData } from './browser/sensibull';
+import { fetchZerodhaData, ZerodhaData } from './browser/zerodha';
 import { generateStrategy } from './ai/prompts';
 import { StrategyResponse } from './ai/genkit';
 import { isDebug, logDebug, logInfo } from './utils/logger';
@@ -37,7 +37,14 @@ function cleanOldHistory() {
   } catch (e) {}
 }
 
-function getPreviousAnalysis(): StrategyResponse | undefined {
+interface HistoryEntry {
+  timestamp: string;
+  zerodhaMetrics: any;
+  sensibullMetrics: any;
+  strategy: StrategyResponse;
+}
+
+function getPreviousHistoryEntry(): HistoryEntry | undefined {
   try {
     if (fs.existsSync(historyFilePath)) {
       const fileData = fs.readFileSync(historyFilePath, 'utf8');
@@ -52,7 +59,11 @@ function getPreviousAnalysis(): StrategyResponse | undefined {
   return undefined;
 }
 
-function saveAnalysisToHistory(strategy: StrategyResponse) {
+function saveAnalysisToHistory(
+  strategy: StrategyResponse,
+  zerodha: ZerodhaData,
+  sensibull: SensibullData
+) {
   try {
     let history: any[] = [];
     if (fs.existsSync(historyFilePath)) {
@@ -62,14 +73,42 @@ function saveAnalysisToHistory(strategy: StrategyResponse) {
       }
     }
     
-    const entry = {
+    const entry: HistoryEntry = {
       timestamp: new Date().toISOString(),
-      ...strategy
+      zerodhaMetrics: {
+        datetime: zerodha.datetime,
+        open: zerodha.open,
+        high: zerodha.high,
+        low: zerodha.low,
+        close: zerodha.close,
+        cprPivot: zerodha.cprPivot,
+        cprBC: zerodha.cprBC,
+        cprTC: zerodha.cprTC,
+        atr: zerodha.atr,
+        plusDI: zerodha.plusDI,
+        minusDI: zerodha.minusDI,
+        adx: zerodha.adx
+      },
+      sensibullMetrics: {
+        price: sensibull.price,
+        pcr: sensibull.pcr,
+        maxPain: sensibull.maxPain,
+        indiaVix: sensibull.indiaVix,
+        ivPercentile: sensibull.ivPercentile,
+        expiryUsed: sensibull.expiryUsed,
+        callOi: sensibull.callOi,
+        putOi: sensibull.putOi,
+        callOiChange: sensibull.callOiChange,
+        putOiChange: sensibull.putOiChange,
+        futureOi: sensibull.futureOi,
+        futureOiChange: sensibull.futureOiChange
+      },
+      strategy: strategy
     };
     
     history.push(entry);
     fs.writeFileSync(historyFilePath, JSON.stringify(history, null, 2), 'utf8');
-    logDebug(`Saved analysis to history at ${historyFilePath}`);
+    logDebug(`Saved analysis and metrics to history at ${historyFilePath}`);
   } catch (err: any) {
     logDebug(`Warning: Could not save strategy history: ${err.message}`);
   }
@@ -153,12 +192,12 @@ async function runPipeline() {
     logInfo('Successfully fetched Sensibull option metrics.');
 
     logDebug('Synthesizing data and invoking OpenAI model...');
-    const previousStrategy = getPreviousAnalysis();
-    const strategy = await generateStrategy(zerodhaData, sensibullData, previousStrategy);
+    const previousEntry = getPreviousHistoryEntry();
+    const strategy = await generateStrategy(zerodhaData, sensibullData, previousEntry);
     logInfo('Synthesized strategy analysis successfully.\n');
 
     printStrategyCard(strategy);
-    saveAnalysisToHistory(strategy);
+    saveAnalysisToHistory(strategy, zerodhaData, sensibullData);
 
     console.log(chalk.gray(`\nNext analysis cycle in ${intervalMinutes} minutes at ${new Date(Date.now() + intervalMs).toLocaleTimeString()}...\n`));
 

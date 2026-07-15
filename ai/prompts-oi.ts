@@ -80,6 +80,15 @@ ${previousContext}
 
 ### OUTPUT INSTRUCTIONS
 Generate a JSON object matching the StrategyOISchema. Be extremely concise, direct, and actionable. Avoid conversational filler or general analysis paragraphs.
+
+Determine and populate each property explicitly:
+1. **marketSentiment:** Define the overall trend (BULLISH, BEARISH, NEUTRAL, or HIGH_VOLATILITY_NO_TRADE).
+2. **strategyName:** Recommend a strategy name (e.g. Bull Call Spread, Bear Put Spread, Short Strangle, No Trade).
+3. **support & resistance:** Main immediate boundary levels from the CPR or heavy OI strikes.
+4. **currentPriceStatus:** Status of current price relative to boundaries (e.g., "24187 (Middle of range - Wait)").
+5. **tradeRecommendation:** A step-by-step option setup with specific entry rules, stop-losses, and target guidelines.
+6. **oiHighlights:** A list of 3-4 bullet points highlighting strike OI additions or coverage actions.
+7. **goldenRule:** Formulate one direct behavioral/trading rule based on today's technical and options structure (e.g., "Avoid buying calls when call writers are aggressively defending the 24200 strike").
 `;
 
   const response = await ai.generate({

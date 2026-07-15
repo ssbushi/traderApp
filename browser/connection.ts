@@ -139,7 +139,7 @@ export async function connectToChromeOI(): Promise<{ context: BrowserContext; ze
     if (url.includes('kite.zerodha.com') || title.toLowerCase().includes('kite')) {
       zerodhaPage = page;
     }
-    if (url.includes('sensibull.com/open_interest') || (url.includes('sensibull.com') && title.toLowerCase().includes('open interest'))) {
+    if (url.includes('open-interest') || (url.includes('sensibull.com') && title.toLowerCase().includes('open interest'))) {
       sensibullOIPage = page;
     }
   }
@@ -155,7 +155,7 @@ export async function connectToChromeOI(): Promise<{ context: BrowserContext; ze
   if (!sensibullOIPage) {
     logInfo('Sensibull Open Interest tab not found. Opening a new tab...');
     sensibullOIPage = await context.newPage();
-    await sensibullOIPage.goto('https://web.sensibull.com/open_interest', { waitUntil: 'domcontentloaded' });
+    await sensibullOIPage.goto('https://web.sensibull.com/open-interest/oi-vs-strike?tradingsymbol=NIFTY', { waitUntil: 'domcontentloaded' });
   }
 
   return { context, zerodhaPage, sensibullOIPage };

@@ -31,9 +31,9 @@ export async function fetchSensibullOIData(page: Page): Promise<SensibullOIData>
   // Navigate to Open Interest page if not already there, otherwise reload
   await page.bringToFront();
   const currentUrl = page.url();
-  if (!currentUrl.includes('/open_interest')) {
+  if (!currentUrl.includes('open-interest')) {
     logDebug(chalk.blue('Navigating Sensibull to Open Interest page...'));
-    await page.goto('https://web.sensibull.com/open_interest', { waitUntil: 'domcontentloaded' }).catch(() => {});
+    await page.goto('https://web.sensibull.com/open-interest/oi-vs-strike?tradingsymbol=NIFTY', { waitUntil: 'domcontentloaded' }).catch(() => {});
   } else {
     logDebug(chalk.blue('Reloading Sensibull Open Interest page to capture fresh data...'));
     await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});

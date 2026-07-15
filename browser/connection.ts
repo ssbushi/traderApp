@@ -4,6 +4,7 @@ import * as dotenv from 'dotenv';
 import chalk from 'chalk';
 import * as os from 'os';
 import * as fs from 'fs';
+import { logInfo } from '../utils/logger';
 
 dotenv.config();
 
@@ -110,4 +111,52 @@ export async function connectToChrome(): Promise<{ context: BrowserContext; zero
   }
 
   return { context, zerodhaPage, sensibullPage };
+}
+
+export async function connectToChromeOI(): Promise<{ context: BrowserContext; zerodhaPage: Page; sensibullOIPage: Page }> {
+  const isCDPRunning = await checkChromeCDP();
+  if (!isCDPRunning) {
+    printCDPInstructions();
+    throw new Error('Chrome remote debugging is not available.');
+  }
+
+  const browser = await chromium.connectOverCDP(`http://${host}:${port}`);
+  const contexts = browser.contexts();
+  if (contexts.length === 0) {
+    throw new Error('No browser contexts found in the remote Chrome instance.');
+  }
+
+  const context = contexts[0];
+  const pages = context.pages();
+
+  let zerodhaPage: Page | null = null;
+  let sensibullOIPage: Page | null = null;
+
+  for (const page of pages) {
+    const url = page.url();
+    const title = await page.title().catch(() => '');
+
+    if (url.includes('kite.zerodha.com') || title.toLowerCase().includes('kite')) {
+      zerodhaPage = page;
+    }
+    if (url.includes('sensibull.com/open_interest') || (url.includes('sensibull.com') && title.toLowerCase().includes('open interest'))) {
+      sensibullOIPage = page;
+    }
+  }
+
+  if (!zerodhaPage) {
+    console.log(chalk.yellow(`\n[Warning] Could not find Zerodha Kite tab in your open browser.`));
+    console.log(chalk.white('Please ensure you have opened and logged into:'));
+    console.log(chalk.white('  - Zerodha Kite (kite.zerodha.com)'));
+    console.log('');
+    throw new Error('Required Zerodha Kite tab is not open.');
+  }
+
+  if (!sensibullOIPage) {
+    logInfo('Sensibull Open Interest tab not found. Opening a new tab...');
+    sensibullOIPage = await context.newPage();
+    await sensibullOIPage.goto('https://web.sensibull.com/open_interest', { waitUntil: 'domcontentloaded' });
+  }
+
+  return { context, zerodhaPage, sensibullOIPage };
 }

@@ -6,6 +6,8 @@
   "scripts": {
     "start": "ts-node index.ts",
     "debug": "ts-node index.ts --debug",
+    "start:oi": "ts-node index-oi.ts",
+    "debug:oi": "ts-node index-oi.ts --debug",
     "build": "tsc",
     "typecheck": "tsc --noEmit"
   },

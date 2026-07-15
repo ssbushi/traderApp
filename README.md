@@ -86,6 +86,15 @@ You can start the script in two different modes:
     npm run debug
     ```
 
+*   **Open Interest Mode:** (Runs the per-strike Open Interest analysis script that connects to the Sensibull Open Interest view):
+    ```bash
+    # Standard quiet mode
+    npm run start:oi
+
+    # Debug mode
+    npm run debug:oi
+    ```
+
 ---
 
 ## ⚙️ Configuration Properties (`.env`)
@@ -105,14 +114,18 @@ You can start the script in two different modes:
 ```text
 ├── package.json          # Project dependencies & launch scripts
 ├── tsconfig.json         # TypeScript compiler configurations
-├── index.ts              # Entrypoint, custom markdown renderer & quiet loop
+├── index.ts              # Original Entrypoint (Option Chain Mode)
+├── index-oi.ts           # New Entrypoint (Open Interest Mode)
 ├── browser/
-│   ├── connection.ts     # CDP session connection & browser OS instructions
-│   ├── sensibull.ts      # Intraday options metrics network interception
+│   ├── connection.ts     # CDP session connection (exports connectToChrome & connectToChromeOI)
+│   ├── sensibull.ts      # Option Chain network interception
+│   ├── sensibull-oi.ts   # Open Interest network interception & preset clicking
 │   └── zerodha.ts        # Chart iframe download trigger, CSV parser, and reloads
 ├── utils/
 │   └── logger.ts         # Logger utility for debug flag and info logging
 └── ai/
-    ├── genkit.ts         # Genkit configuration & Zod output schemas
-    └── prompts.ts        # Model prompt construction & strategy generation
+    ├── genkit.ts         # Original Genkit configuration & Zod schemas
+    ├── genkit-oi.ts      # OI Genkit configuration & Zod schemas
+    ├── prompts.ts        # Original Model prompts compiler
+    └── prompts-oi.ts     # OI Model prompts compiler (aggregates per-strike data)
 ```

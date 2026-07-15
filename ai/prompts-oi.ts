@@ -93,6 +93,13 @@ You MUST return all required fields. Ensure your output JSON contains the follow
 - "battlefieldStrikes"
 - "tradingBias"
 - "biasCommentary"
+- "currentBattlefield"
+- "bullishConfirmation"
+- "bearishConfirmation"
+- "bullTrapScenarios"
+- "bearTrapScenarios"
+- "realTimeBullishThresholds"
+- "realTimeBearishThresholds"
 - "goldenRule"
 
 Details for the fields:
@@ -100,7 +107,7 @@ Details for the fields:
 2. **priceComparison:** Shows previous close vs current close (e.g. "24190 → 24213").
 3. **oiComparisonTable:** A markdown table comparing key strikes' Call/Put OI "Earlier" vs "Now" and "Change" (use the previous data and current data).
 4. **oiChangeInterpretation:** High-impact bullet points detailing what the OI shifts mean (e.g. who is rolling or defending).
-5. **chartReading:** Key chart signals observed (absorption zones, supply levels, price refusal points).
+5. **chartReading:** Key chart signals observed (absorption zones, supply zones).
 6. **adxStructure:** Trend strength using DMI/ADX values (e.g. "DI+ ≈ 38, DI− ≈ 15, ADX ≈ 36. Trending market.").
 7. **ceilings:** A list of 3 ceiling targets (role: Immediate, Next, Expansion Target) and their touched probability.
 8. **floors:** A list of 3 floor supports (role: Ultra Strong, Strong Support, Base Support) and their held probability.
@@ -108,7 +115,22 @@ Details for the fields:
 10. **battlefieldStrikes:** Meaning of key strikes (e.g. 24100 -> "Strong Floor", 24200 -> "New Pivot").
 11. **tradingBias:** Direct bias declaration (e.g., "Above 24200 = Buy-on-dips").
 12. **biasCommentary:** Commentary about the path of least resistance and key levels.
-13. **goldenRule:** Formulate one direct behavioral rule for today (e.g., "Avoid buying breakouts when ADX is below 20"). Do not leave this field out.
+13. **currentBattlefield:** Immediate pivot, major ceiling, and major floor strikes (e.g. ["24150 = Immediate pivot", ...]).
+14. **bullishConfirmation:** Object defining bullish setup:
+    - **conditions:** Expected strike OI behavior shifts (e.g. ["24150 CE: OI decrease (short covering)", "24150 PE: OI increase"]).
+    - **targets:** Specific numeric strike target changes based on current values (e.g. if current Call OI is 52L and you want decrease, write "24150 CE: 52L -> below 50L"). Express values in Lakhs (L) or Crores (Cr).
+    - **projectedTarget:** Projected targets (e.g., "24195 → 24210 → 24235").
+    - **probability:** Target path probability (e.g. "75%").
+15. **bearishConfirmation:** Object defining bearish setup:
+    - **conditions:** Expected strike OI behavior shifts.
+    - **targets:** Specific numeric strike target changes based on current values (e.g., "24150 PE: 55L -> below 53L").
+    - **projectedTarget:** Projected targets (e.g., "24130 → 24110 → 24090").
+    - **probability:** Target path probability (e.g. "75-80%").
+16. **bullTrapScenarios:** Avoid long trade warning signals combining price and strike changes (e.g., "Price rises to 24180-24190 but 24150 CE and 24200 CE are rising while 24150 PE stalls. Expect dump to 24160 -> 24140").
+17. **bearTrapScenarios:** Avoid short trade warning signals combining price and strike changes (e.g., "Price breaks 24145 but 24150 PE is rising and 24100 PE is stable. Expect squeeze to 24175 -> 24200").
+18. **realTimeBullishThresholds:** A list of direct threshold rules for bulls gaining control (e.g., ["24150 PE > 57L", "24150 CE < 50L", "Price > 24180"]).
+19. **realTimeBearishThresholds:** A list of direct threshold rules for bears gaining control (e.g., ["24150 PE < 53L", "24150 CE > 54L", "Price < 24148"]).
+20. **goldenRule:** Formulate one direct behavioral rule for today (e.g., "Avoid buying breakouts when ADX is below 20"). Do not leave this field out.
 `;
 
   const response = await ai.generate({

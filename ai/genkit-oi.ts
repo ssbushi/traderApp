@@ -49,6 +49,29 @@ export const StrategyOISchema = z.object({
   // Direct bias
   tradingBias: z.string().describe('Trading bias statement (e.g., "Above 24200 = Buy-on-dips")'),
   biasCommentary: z.string().describe('30-60 mins path of least resistance and key levels details'),
+  
+  // Real-time Strike confirmation targets (from sample_windings.out)
+  currentBattlefield: z.array(z.string()).describe('Immediate pivot, major ceiling, and major floor strikes (e.g. ["24150 = Immediate pivot", ...])'),
+  bullishConfirmation: z.object({
+    conditions: z.array(z.string()).describe('Strike specific OI behaviors wanted (e.g. ["24150 CE: OI decrease", ...])'),
+    targets: z.array(z.string()).describe('OI change threshold targets (e.g. ["24150 CE: 52L -> below 50L", "Price: Holds above 24180"])'),
+    projectedTarget: z.string().describe('Projected target path (e.g. "24195 → 24210 → 24235")'),
+    probability: z.string().describe('Target path probability (e.g., "75%")'),
+  }).describe('Strike confirmation metrics for real bullish strength'),
+  
+  bearishConfirmation: z.object({
+    conditions: z.array(z.string()).describe('Strike specific OI behaviors wanted'),
+    targets: z.array(z.string()).describe('OI change threshold targets (e.g. ["24150 PE: 55L -> below 53L"])'),
+    projectedTarget: z.string().describe('Projected target path (e.g. "24130 → 24110 → 24090")'),
+    probability: z.string().describe('Target path probability (e.g. "75-80%")'),
+  }).describe('Strike confirmation metrics for real bearish weakness'),
+  
+  bullTrapScenarios: z.string().describe('OI and price triggers representing a bull trap'),
+  bearTrapScenarios: z.string().describe('OI and price triggers representing a bear trap'),
+  
+  realTimeBullishThresholds: z.array(z.string()).describe('Real-time strike boundaries to confirm bulls gaining control (e.g., ["24150 PE > 57L", "24150 CE < 50L"])'),
+  realTimeBearishThresholds: z.array(z.string()).describe('Real-time strike boundaries to confirm bears gaining control (e.g., ["24150 PE < 53L", "24150 CE > 54L"])'),
+  
   goldenRule: z.string().describe('One direct behavioral/trading rule for today based on current conditions'),
 });
 

@@ -10,17 +10,46 @@ export const ai = genkit({
 
 // Zod schema for structured output of the new Open Interest-augmented strategy report
 export const StrategyOISchema = z.object({
-  marketSentiment: z.enum(['BULLISH', 'BEARISH', 'NEUTRAL', 'HIGH_VOLATILITY_NO_TRADE'])
-    .describe('Synthesized market outlook for NIFTY based on technical indicators and per-strike OI distribution'),
-  strategyName: z.string().describe('Recommended options strategy name (e.g., Bull Call Spread, Short Iron Condor, No Trade)'),
-  support: z.number().describe('Main immediate support level'),
-  resistance: z.number().describe('Main immediate resistance level'),
-  currentPriceStatus: z.string().describe('Short status of current price relative to range (e.g. "23934 (Middle of range - Wait)")'),
+  statusUpdate: z.string().describe('Title of the update (e.g., "10:18 AM UPDATE — BREAKOUT CONFIRMED")'),
+  priceComparison: z.string().describe('Price change comparison since the last interval check (e.g., "24190 → 24213")'),
   
-  // Custom trade setup fields
-  tradeRecommendation: z.string().describe('Detailed step-by-step option trade entry, SL and target setup incorporating strike-specific OI walls'),
-  oiHighlights: z.array(z.string()).describe('Highlights from the per-strike OI changes (e.g., "24200: heavy put additions, support strengthening")'),
-  goldenRule: z.string().describe('One direct trading advice rule for today based on current conditions'),
+  // Option Interest shifts
+  oiComparisonTable: z.string().describe('Text table or list showing Strike, Earlier, Now, and Change for Call/Put OI on key strikes'),
+  oiChangeInterpretation: z.string().describe('Text explaining what the OI changes indicate (e.g., "Put writers are defending...")'),
+  
+  // Technical Analysis
+  chartReading: z.string().describe('Brief chart observations (candle absorption, breakouts, supply zones)'),
+  adxStructure: z.string().describe('Detailed ADX/DMI metrics and trend type (e.g., "DI+ ≈ 38, DI− ≈ 15, ADX ≈ 36. Trending market.")'),
+  
+  // Floor and Ceiling targets
+  ceilings: z.array(z.object({
+    level: z.number(),
+    role: z.string().describe('Immediate, Next, or Expansion Target'),
+    probability: z.string().describe('Percentage touch probability (e.g. "75%")')
+  })).describe('Three ceiling levels and touch probabilities'),
+  
+  floors: z.array(z.object({
+    level: z.number(),
+    role: z.string().describe('Ultra Strong, Strong Support, or Base Support'),
+    probability: z.string().describe('Percentage hold probability (e.g. "80%")')
+  })).describe('Three floor levels and hold probabilities'),
+  
+  // Expected paths
+  scenarios: z.array(z.object({
+    name: z.string().describe('Scenario name (e.g., "Scenario 1 (Most Likely – 55%)")'),
+    path: z.string().describe('Path price projection path (e.g. "24215 → 24200 retest → Hold → 24235 → 24250")')
+  })).describe('Three price movement projection paths'),
+  
+  // Options battlefield
+  battlefieldStrikes: z.array(z.object({
+    strike: z.number(),
+    meaning: z.string().describe('Meaning/role of strike (e.g. "Strong Floor", "Bull Floor", "New Pivot", "Next Resistance"')
+  })).describe('Battlefield strikes meanings'),
+  
+  // Direct bias
+  tradingBias: z.string().describe('Trading bias statement (e.g., "Above 24200 = Buy-on-dips")'),
+  biasCommentary: z.string().describe('30-60 mins path of least resistance and key levels details'),
+  goldenRule: z.string().describe('One direct behavioral/trading rule for today based on current conditions'),
 });
 
 export type StrategyOIResponse = z.infer<typeof StrategyOISchema>;

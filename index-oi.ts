@@ -107,33 +107,48 @@ function saveAnalysisToHistory(
 }
 
 function printStrategyCard(strategy: StrategyOIResponse) {
-  let sentimentColor = chalk.white;
-  if (strategy.marketSentiment === 'BULLISH') sentimentColor = chalk.green.bold;
-  if (strategy.marketSentiment === 'BEARISH') sentimentColor = chalk.red.bold;
-  if (strategy.marketSentiment === 'NEUTRAL') sentimentColor = chalk.yellow.bold;
-  if (strategy.marketSentiment === 'HIGH_VOLATILITY_NO_TRADE') sentimentColor = chalk.magenta.bold;
-
   const cardContent = [
-    `${chalk.cyan.bold('OUTLOOK:')} ${sentimentColor(strategy.marketSentiment)}  |  ${chalk.cyan.bold('STRATEGY:')} ${chalk.yellow.bold(strategy.strategyName)}`,
+    `${chalk.yellow.bold(strategy.statusUpdate)}`,
+    `${chalk.cyan.bold('Price Action:')} ${chalk.white(strategy.priceComparison)}`,
     `${chalk.gray('—'.repeat(60))}`,
-    `${chalk.bold.underline('RANGE & CURRENT LOCATION')}`,
-    `• ${chalk.green.bold('Support:')} ${chalk.green(strategy.support)}   • ${chalk.red.bold('Resistance:')} ${chalk.red(strategy.resistance)}`,
-    `• ${chalk.bold('Current Status:')} ${chalk.cyan(strategy.currentPriceStatus)}`,
+    `${chalk.bold.underline('OI CHANGES COMPARISON')}`,
+    strategy.oiComparisonTable,
+    ``,
+    `${chalk.bold.underline('OI INTERPRETATION')}`,
+    strategy.oiChangeInterpretation,
     `${chalk.gray('—'.repeat(60))}`,
-    `${chalk.bold.underline('ACTIONABLE TRADE RECOMMENDATION')}`,
-    strategy.tradeRecommendation,
+    `${chalk.bold.underline('CHART ANALYSIS & TREND')}`,
+    `• ${chalk.bold('Observations:')} ${strategy.chartReading}`,
+    `• ${chalk.bold('ADX/DMI Structure:')} ${strategy.adxStructure}`,
     `${chalk.gray('—'.repeat(60))}`,
-    `${chalk.bold.underline('OPEN INTEREST HIGHLIGHTS')}`,
-    strategy.oiHighlights.map(highlight => `• ${highlight}`).join('\n'),
+    `${chalk.bold.underline('EXPECTED PATH SCENARIOS')}`,
+    strategy.scenarios.map(s => `• ${chalk.yellow.bold(s.name)}:\n  ${s.path}`).join('\n\n'),
+    `${chalk.gray('—'.repeat(60))}`,
+    `${chalk.bold.underline('INTRADAY CEILING & FLOOR PROBABILITIES')}`,
+    `🟢 ${chalk.green.bold('SUPPORT FLOORS:')}`,
+    strategy.floors.map(f => `  - ${chalk.green(f.level)} (${f.role}) Hold Probability: ${chalk.green.bold(f.probability)}`).join('\n'),
+    ``,
+    `🔴 ${chalk.red.bold('RESISTANCE CEILINGS:')}`,
+    strategy.ceilings.map(c => `  - ${chalk.red(c.level)} (${c.role}) Touch Probability: ${chalk.red.bold(c.probability)}`).join('\n'),
+    `${chalk.gray('—'.repeat(60))}`,
+    `${chalk.bold.underline('OPTION BATTLEFIELD')}`,
+    strategy.battlefieldStrikes.map(b => `  - Strike ${chalk.yellow(b.strike)}: ${b.meaning}`).join('\n'),
+    `${chalk.gray('—'.repeat(60))}`,
+    `🎯 ${chalk.cyan.bold('TRADING BIAS NOW')}`,
+    `  ${chalk.green.bold(strategy.tradingBias)}`,
+    `  ${strategy.biasCommentary}`,
     `${chalk.gray('—'.repeat(60))}`,
     `💡 ${chalk.yellow.bold('GOLDEN RULE FOR TODAY')}`,
     `  ${chalk.italic.yellow(strategy.goldenRule)}`
   ].join('\n');
 
   let borderColor = 'yellow';
-  if (strategy.marketSentiment === 'BULLISH') borderColor = 'green';
-  if (strategy.marketSentiment === 'BEARISH') borderColor = 'red';
-  if (strategy.marketSentiment === 'HIGH_VOLATILITY_NO_TRADE') borderColor = 'magenta';
+  const biasUpper = strategy.tradingBias.toUpperCase();
+  if (biasUpper.includes('BUY') || biasUpper.includes('BULL') || biasUpper.includes('LONG') || biasUpper.includes('UPWARD')) {
+    borderColor = 'green';
+  } else if (biasUpper.includes('SELL') || biasUpper.includes('BEAR') || biasUpper.includes('SHORT') || biasUpper.includes('DOWNWARD')) {
+    borderColor = 'red';
+  }
 
   const boxed = boxen(cardContent, {
     padding: 1,

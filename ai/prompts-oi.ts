@@ -32,10 +32,9 @@ export async function generateOIStrategy(
     const prevStrat = previousEntry.strategy;
     previousContext = `
 #### 3. Previous Strategy Analysis (From 5 Minutes Ago)
-- **Previous Outlook:** ${prevStrat.marketSentiment}
-- **Previous Strategy Name:** ${prevStrat.strategyName}
-- **Previous Range:** Support: ${prevStrat.support} | Resistance: ${prevStrat.resistance}
-- **Previous Recommendation:** ${prevStrat.tradeRecommendation}
+- **Previous Update Title:** ${prevStrat.statusUpdate}
+- **Previous Price Action:** ${prevStrat.priceComparison}
+- **Previous Trading Bias:** ${prevStrat.tradingBias}
 - **Previous Golden Rule:** ${prevStrat.goldenRule}
 `;
   }
@@ -82,23 +81,34 @@ ${previousContext}
 Generate a JSON object matching the StrategyOISchema. Be extremely concise, direct, and actionable. Avoid conversational filler or general analysis paragraphs.
 
 You MUST return all required fields. Ensure your output JSON contains the following exact keys:
-- "marketSentiment"
-- "strategyName"
-- "support"
-- "resistance"
-- "currentPriceStatus"
-- "tradeRecommendation"
-- "oiHighlights"
+- "statusUpdate"
+- "priceComparison"
+- "oiComparisonTable"
+- "oiChangeInterpretation"
+- "chartReading"
+- "adxStructure"
+- "ceilings"
+- "floors"
+- "scenarios"
+- "battlefieldStrikes"
+- "tradingBias"
+- "biasCommentary"
 - "goldenRule"
 
 Details for the fields:
-1. **marketSentiment:** Define the overall trend (BULLISH, BEARISH, NEUTRAL, or HIGH_VOLATILITY_NO_TRADE).
-2. **strategyName:** Recommend a strategy name (e.g. Bull Call Spread, Bear Put Spread, Short Strangle, No Trade).
-3. **support & resistance:** Main immediate boundary levels (numeric values only) from the CPR or heavy OI strikes.
-4. **currentPriceStatus:** Status of current price relative to boundaries (e.g., "24187 (Middle of range - Wait)").
-5. **tradeRecommendation:** A step-by-step option setup with specific entry rules, stop-losses, and target guidelines.
-6. **oiHighlights:** A list of 3-4 bullet points highlighting strike OI additions or coverage actions.
-7. **goldenRule:** Formulate one direct behavioral/trading rule based on today's technical and options structure (e.g., "Avoid buying calls when call writers are aggressively defending the 24200 strike"). Do not leave this field out.
+1. **statusUpdate:** Title of the update (e.g. "10:18 AM UPDATE — BREAKOUT CONFIRMED" or "2:30 PM UPDATE — RANGE BOUND DAY").
+2. **priceComparison:** Shows previous close vs current close (e.g. "24190 → 24213").
+3. **oiComparisonTable:** A markdown table comparing key strikes' Call/Put OI "Earlier" vs "Now" and "Change" (use the previous data and current data).
+4. **oiChangeInterpretation:** High-impact bullet points detailing what the OI shifts mean (e.g. who is rolling or defending).
+5. **chartReading:** Key chart signals observed (absorption zones, supply levels, price refusal points).
+6. **adxStructure:** Trend strength using DMI/ADX values (e.g. "DI+ ≈ 38, DI− ≈ 15, ADX ≈ 36. Trending market.").
+7. **ceilings:** A list of 3 ceiling targets (role: Immediate, Next, Expansion Target) and their touched probability.
+8. **floors:** A list of 3 floor supports (role: Ultra Strong, Strong Support, Base Support) and their held probability.
+9. **scenarios:** 3 distinct projected price paths (Scenario 1 [Most Likely], Scenario 2, Scenario 3) using down/up arrows.
+10. **battlefieldStrikes:** Meaning of key strikes (e.g. 24100 -> "Strong Floor", 24200 -> "New Pivot").
+11. **tradingBias:** Direct bias declaration (e.g., "Above 24200 = Buy-on-dips").
+12. **biasCommentary:** Commentary about the path of least resistance and key levels.
+13. **goldenRule:** Formulate one direct behavioral rule for today (e.g., "Avoid buying breakouts when ADX is below 20"). Do not leave this field out.
 `;
 
   const response = await ai.generate({
